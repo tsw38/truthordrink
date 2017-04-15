@@ -1,25 +1,35 @@
 var webpack = require('webpack');
-var path    = require('path');
+var path = require('path');
+var uglifyJsPlugin = webpack.optimize.UglifyJsPlugin;
 
-var BUILD_DIR = path.resolve(__dirname, 'public/js');
-var APP_DIR   = path.resolve(__dirname, 'src');
+var PATHS = {
+  build: path.resolve(__dirname, 'build'),
+  bundle: path.resolve(__dirname, 'public/js'),
+  src: path.resolve(__dirname, 'src')
+};
+
 
 var config = {
-  entry: APP_DIR + "/main.js",
+  entry: PATHS.src + "/react/main.js",
   output: {
-    path: BUILD_DIR,
-    filename: 'bundle.js'
+    path: PATHS.bundle,
+    filename: 'bundle.min.js'
   },
   module: {
     loaders: [{
       test: /\.jsx?/,
-      include: APP_DIR,
-      loader : 'babel'
+      include: PATHS.src,
+      exclude: /node_modules/,
+      loader: 'babel-loader?presets[]=es2015&presets[]=react'
     }]
   },
-  resolveLoader:{
-    moduleExtensions: ['-loader']
-  }
+  plugins: [
+    new uglifyJsPlugin({
+      compress: {
+        warnings: false
+      }
+    })
+  ]
 };
 
 module.exports = config;

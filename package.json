@@ -32,5 +32,8 @@
     "serve-favicon": "^2.4.2",
     "uglify-js": "^2.8.22",
     "webpack-stream": "^3.2.0"
+  },
+  "devDependencies": {
+    "webpack": "^2.4.1"
   }
 }
