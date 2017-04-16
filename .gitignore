@@ -8,7 +8,9 @@
 
 # production
 /dist
+/build
 /**/*.css
+.sass-cache
 
 # misc
 .DS_Store
