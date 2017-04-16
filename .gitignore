@@ -11,6 +11,7 @@
 /build
 /**/*.css
 .sass-cache
+./api
 
 # misc
 .DS_Store
