@@ -81,7 +81,7 @@
 	      return _react2.default.createElement(
 	        'p',
 	        null,
-	        'Hello Reazsdasdct!'
+	        'Hello React!'
 	      );
 	    }
 	  }]);

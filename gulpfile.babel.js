@@ -14,11 +14,11 @@ const PATHS = {
   endpoints: path.resolve(__dirname, 'src/api/**/*.js'),
   sass: path.resolve(__dirname, 'src/sass/**/*.scss'),
   react: path.resolve(__dirname, 'src/react/**/*.js'),
-  api: path.resolve(__dirname, 'src/api')
+  api: path.resolve(__dirname, 'api')
 }
 
 gulp.task('default', (cb) => {
-  run('sass','flow','webpack','server','watch',cb);
+  run('sass','flow','webpack','api','server','restart','watch',cb);
 });
 gulp.task('prod-build', (cb) => {
   run('sass-prod','webpack-prod','prod-clean');
@@ -26,7 +26,7 @@ gulp.task('prod-build', (cb) => {
 
 gulp.task('watch', ()=>{
   gulp.watch(PATHS.react, ['watch-webpack']);
-  gulp.watch(PATHS.endpoints, ['restart']);
+  gulp.watch(PATHS.endpoints, ['api','restart']);
   gulp.watch(PATHS.sass, ['sass']);
 });
 
@@ -42,6 +42,12 @@ gulp.task('prod-clean', shell.task([
 );
 
 gulp.task('flow', shell.task(['flow'],{ignoreErrors: true}));
+
+gulp.task('api', shell.task([
+  'rm -rf api/*', 'mkdir -p api',
+  'babel ./src/api --out-dir ./api/ --no-comments --minified'
+  // 'babel ./src/api/truth.server.js --out-file ./api/truth.server.js --no-comments --minified'
+]));
 
 gulp.task('webpack',()=>{
   return gulp.src('./src/react/main.js')

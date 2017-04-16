@@ -5,7 +5,7 @@ const DOC_ROOT = document.getElementById('app');
 
 class App extends Component{
   render() {
-    return <p>Hello Reazsdasdct!</p>;
+    return <p>Hello React!</p>;
   }
 }
 
