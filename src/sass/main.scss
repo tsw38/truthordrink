@@ -1,5 +1,52 @@
-@import 'compass/reset';
+@import 'compass/reset',
+        'compass/css3';
 
 body{
-  background-color:blue;
+  background-image: linear-gradient(to left, #ff003c 0%, #ff7e00 100%);
+  background-attachment:fixed;
+  background-repeat: no-repeat;
+}
+.content-wrapper{
+  width:99vw;
+  height:100vh;
+  @include display-flex;
+  @include justify-content(flex-start);
+  @include align-items(center);
+  @include flex-direction(column);
+  margin:0 auto;
+
+  header{
+    @include flex-grow(0);
+    margin:20px 0 30px;
+
+    a{
+      display:block;
+
+      img{
+        max-width: 360px;
+        max-height: 200.53px;
+        height: 16vw;
+      }
+    }
+  }
+  .card-wrapper{
+    background-color:white;
+    @include display-flex;
+    @include flex-grow(0);
+    width:75vw;
+    height:calc(65vh - 50px);
+    border-radius:10px;
+    box-shadow: 0 3px 0px 1px #ababab;
+    overflow:hidden;
+
+
+    .sign-in{
+      width:50%;
+      background-color:coral;
+    }
+    .active-users{
+      width:50%;
+      background-color:LightSeaGreen;
+    }
+  }
 }

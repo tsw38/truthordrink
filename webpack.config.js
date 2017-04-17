@@ -20,7 +20,7 @@ var config = {
       test: /\.jsx?/,
       include: PATHS.src,
       exclude: /node_modules/,
-      loader: 'babel-loader?presets[]=es2015&presets[]=react'
+      loader : 'babel-loader'
     }]
   },
   plugins: [
