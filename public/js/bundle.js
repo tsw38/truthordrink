@@ -64,7 +64,7 @@
 
 	var _CardWrapper2 = _interopRequireDefault(_CardWrapper);
 
-	var _TruthStore = __webpack_require__(224);
+	var _TruthStore = __webpack_require__(225);
 
 	var _TruthStore2 = _interopRequireDefault(_TruthStore);
 
@@ -29623,6 +29623,10 @@
 
 	var _UserActions2 = _interopRequireDefault(_UserActions);
 
+	var _UserStore = __webpack_require__(221);
+
+	var _UserStore2 = _interopRequireDefault(_UserStore);
+
 	var _mobxReact = __webpack_require__(184);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
@@ -29644,8 +29648,7 @@
 	    _this.state = {
 	      username: _this.oldUser() || '',
 	      isset: _this.oldUser().length ? true : false,
-	      uuid: '',
-	      socket: io.connect('//' + window.location.hostname + ':6357')
+	      uuid: ''
 	    };
 	    _this.oldUser = _this.oldUser.bind(_this);
 	    _this.handleSubmit = _this.handleSubmit.bind(_this);
@@ -29657,31 +29660,33 @@
 	    key: 'componentDidMount',
 	    value: function componentDidMount() {
 	      var _uuid = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg');
-	      var socket = this.state.socket;
 
 	      var activeUser = {
 	        UUID: _uuid.substring(0, 36),
 	        username: this.state.username
 	      };
 
-	      socket.on('connect', function () {
+	      _UserStore2.default.me = _uuid.substring(0, 36);
+
+	      _UserStore2.default.socket.on('connect', function () {
 	        if (activeUser.UUID.length) {
-	          socket.emit('add me', activeUser);
+	          _UserStore2.default.socket.emit('add me', activeUser);
+	          _UserStore2.default.socket.emit('room', [activeUser.UUID]);
 	        }
 	      });
 
-	      socket.on('user joined', function (data) {
+	      _UserStore2.default.socket.on('user joined', function (data) {
 	        _UserActions2.default.updateActiveUsers(data.activeUsers);
 	      });
 
-	      socket.on('user left', function (user) {
+	      _UserStore2.default.socket.on('user left', function (user) {
+	        console.log(_UserStore2.default.activeUsers[user] + ' LEFT THE CHAT');
 	        _UserActions2.default.deleteUser(user);
 	      });
 	    }
 	  }, {
 	    key: 'handleSubmit',
 	    value: function handleSubmit(event) {
-	      var socket = this.state.socket;
 
 	      event.preventDefault();
 	      var encryptedName = btoa(this.state.username).replace(/\=/g, '');
@@ -29694,7 +29699,7 @@
 	        uuid: currentCookie.substring(0, 36)
 	      });
 
-	      socket.emit('add me', {
+	      _UserStore2.default.socket.emit('add me', {
 	        username: this.state.username,
 	        UUID: currentCookie.substring(0, 36)
 	      });
@@ -30182,12 +30187,21 @@
 	    value: function deleteUser(uuid) {
 	      delete _UserStore2.default.activeUsers[uuid];
 	    }
+	  }, {
+	    key: 'askToJoinRoom',
+	    value: function askToJoinRoom(myRoom, requestedRoom) {
+	      _UserStore2.default.socket.emit('room', [myRoom, requestedRoom]);
+	      console.log("||||||||||||||||||||||||||||||||||||");
+	      console.log("          REQUEST TO JOIN           ");
+	      console.log(requestedRoom);
+	      console.log("||||||||||||||||||||||||||||||||||||");
+	    }
 	  }]);
 
 	  return UserActions;
 	}();
 
-	var actions = new UserActions();
+	var actions = window.actions = new UserActions();
 	exports.default = actions;
 
 /***/ }),
@@ -30200,9 +30214,15 @@
 	  value: true
 	});
 
-	var _desc, _value, _class, _descriptor;
+	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4;
 
 	var _mobx = __webpack_require__(185);
+
+	var _reactCookie = __webpack_require__(217);
+
+	var _reactCookie2 = _interopRequireDefault(_reactCookie);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _initDefineProp(target, property, descriptor, context) {
 	  if (!descriptor) return;
@@ -30254,17 +30274,54 @@
 	  _classCallCheck(this, UserStore);
 
 	  _initDefineProp(this, 'activeUsers', _descriptor, this);
+
+	  _initDefineProp(this, 'me', _descriptor2, this);
+
+	  _initDefineProp(this, 'leader', _descriptor3, this);
+
+	  _initDefineProp(this, 'socket', _descriptor4, this);
+
+	  this.activeUsers = this.activeUsers;
+	  this.socket = this.socket;
+	  this.me = this.me;
+	  this.leader = this.leader;
+
+	  console.log('what');
+	  var disappear = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+	  disappear = typeof disappear !== 'undefined' ? disappear.split("=") : -1;
+	  console.log('what2');
+	  console.log(disappear);
+	  if (disappear !== -1) {
+	    delete this.activeUsers[disappear[0]];
+	    delete this.activeUsers[disappear[1]];
+	  }
+
+	  console.log("HELLO FROM THE OTHER SIDE");
 	}, (_descriptor = _applyDecoratedDescriptor(_class.prototype, 'activeUsers', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return {};
 	  }
+	}), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, 'me', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return '';
+	  }
+	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'leader', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return '';
+	  }
+	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return io.connect('//' + window.location.hostname + ':6357');
+	  }
 	})), _class);
 
 
-	var store = window.userStore = new UserStore();
-
-	exports.default = store;
+	var userStore = window.userStore = new UserStore();
+	exports.default = userStore;
 
 
 	(0, _mobx.autorun)(function () {
@@ -30301,6 +30358,14 @@
 
 	var _ActiveUserList2 = _interopRequireDefault(_ActiveUserList);
 
+	var _UserStore = __webpack_require__(221);
+
+	var _UserStore2 = _interopRequireDefault(_UserStore);
+
+	var _UserActions = __webpack_require__(220);
+
+	var _UserActions2 = _interopRequireDefault(_UserActions);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -30319,6 +30384,30 @@
 	  }
 
 	  _createClass(ActiveUsers, [{
+	    key: 'componentDidMount',
+	    value: function componentDidMount() {
+	      var hasGroup = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+	      var isLeader = '';
+	      _UserStore2.default.socket.on('from server', function (message) {
+	        if ('leader' in message && !isLeader.length) {
+	          isLeader = message.leader ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
+	        } else if (typeof hasGroup === 'undefined' && 'p1' in message) {
+	          var val = message.p1.uuid + '=' + message.p2.uuid + '=' + isLeader;
+	          _reactCookie2.default.save('DHJ1dGhvcmRyaW5rZ3JvdXA', '' + val);
+	          _UserStore2.default.socket.emit('delete group', message);
+	        }
+	        console.log(message);
+	      });
+	      _UserStore2.default.socket.on('global delete', function (payload) {
+	        console.log(")))))))))))))))))))))))))))))))))");
+	        console.log(payload.p1.uuid);
+	        console.log(payload.p2.uuid);
+	        _UserActions2.default.deleteUser(payload.p1.uuid);
+	        // UserActions.deleteUser(payload.p2.uuid);
+	        console.log(")))))))))))))))))))))))))))))))))");
+	      });
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
 	      return _react2.default.createElement(
@@ -30359,6 +30448,10 @@
 
 	var _mobxReact = __webpack_require__(184);
 
+	var _ActiveUser = __webpack_require__(224);
+
+	var _ActiveUser2 = _interopRequireDefault(_ActiveUser);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -30381,11 +30474,11 @@
 	    value: function render() {
 	      var userList = [];
 	      for (var uuid in _UserStore2.default.activeUsers) {
-	        userList.push(_react2.default.createElement(
-	          'li',
-	          { key: uuid },
-	          _UserStore2.default.activeUsers[uuid]
-	        ));
+	        userList.push(_react2.default.createElement(_ActiveUser2.default, {
+	          key: uuid,
+	          user: _UserStore2.default.activeUsers[uuid],
+	          uuid: uuid
+	        }));
 	      }
 	      return _react2.default.createElement(
 	        'div',
@@ -30406,6 +30499,90 @@
 
 /***/ }),
 /* 224 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+	exports.default = undefined;
+
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _react = __webpack_require__(1);
+
+	var _react2 = _interopRequireDefault(_react);
+
+	var _reactCookie = __webpack_require__(217);
+
+	var _reactCookie2 = _interopRequireDefault(_reactCookie);
+
+	var _UserActions = __webpack_require__(220);
+
+	var _UserActions2 = _interopRequireDefault(_UserActions);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+	var ActiveUser = function (_Component) {
+	  _inherits(ActiveUser, _Component);
+
+	  function ActiveUser(props) {
+	    _classCallCheck(this, ActiveUser);
+
+	    var _this = _possibleConstructorReturn(this, (ActiveUser.__proto__ || Object.getPrototypeOf(ActiveUser)).call(this, props));
+
+	    _this.state = {
+	      name: _this.props.user || '',
+	      uuid: _this.props.uuid || ''
+	    };
+	    _this.handleOnActiveClick = _this.handleOnActiveClick.bind(_this);
+	    return _this;
+	  }
+
+	  _createClass(ActiveUser, [{
+	    key: 'handleOnActiveClick',
+	    value: function handleOnActiveClick(ex) {
+	      var me = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg');
+	      var group = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+	      if (me.length > 36) {
+	        var _me = me.substring(0, 36);
+	        if (_me !== this.state.uuid && typeof group === 'undefined') {
+	          _UserActions2.default.askToJoinRoom(_me, this.state.uuid);
+	        }
+	        if (typeof group !== 'undefined') {
+	          console.log("you are already in a group");
+	        }
+	      } else {
+	        console.log('you need to sign in');
+	      }
+	    }
+	  }, {
+	    key: 'render',
+	    value: function render() {
+	      return _react2.default.createElement(
+	        'li',
+	        {
+	          key: this.props.uuid,
+	          onClick: this.handleOnActiveClick },
+	        this.props.user
+	      );
+	    }
+	  }]);
+
+	  return ActiveUser;
+	}(_react.Component);
+
+	exports.default = ActiveUser;
+
+/***/ }),
+/* 225 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';

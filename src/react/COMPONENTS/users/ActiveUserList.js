@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import UserStore from '../../STORES/UserStore';
 import { observer } from 'mobx-react';
+import ActiveUser from './ActiveUser';
 
 @observer
 export default class ActiveUserList extends Component{
@@ -12,7 +13,11 @@ export default class ActiveUserList extends Component{
     let userList = [];
     for(var uuid in UserStore.activeUsers){
       userList.push(
-        <li key={uuid}>{UserStore.activeUsers[uuid]}</li>
+        <ActiveUser
+          key={uuid}
+          user={UserStore.activeUsers[uuid]}
+          uuid={uuid}
+        />
       )
     }
     return(

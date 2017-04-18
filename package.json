@@ -31,6 +31,7 @@
     "morgan": "^1.8.1",
     "mysql": "^2.13.0",
     "path": "^0.12.7",
+    "random-word": "^2.0.0",
     "react": "^15.5.4",
     "react-cookie": "^1.0.5",
     "react-dom": "^15.5.4",

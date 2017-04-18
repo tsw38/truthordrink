@@ -1,6 +1,8 @@
 import React, { Component } from 'react';
 import cookie from 'react-cookie';
 import UserActions from '../ACTIONS/UserActions';
+import UserStore from '../STORES/UserStore';
+
 import { observer } from 'mobx-react';
 
 @observer
@@ -11,7 +13,6 @@ export default class Login extends Component{
       username: this.oldUser() || '',
       isset: (this.oldUser().length) ? true : false,
       uuid: '',
-      socket: io.connect(`//${window.location.hostname}:6357`)
     }
     this.oldUser = this.oldUser.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
@@ -20,30 +21,33 @@ export default class Login extends Component{
 
   componentDidMount(){
     const _uuid = cookie.load('dHJ1dGhvcmRyaW5rdXNlcg');
-    let socket = this.state.socket;
 
     const activeUser = {
       UUID: _uuid.substring(0,36),
       username: this.state.username
     };
 
+    UserStore.me = _uuid.substring(0,36);
 
 
-    socket.on('connect',()=>{
+    UserStore.socket.on('connect',()=>{
       if(activeUser.UUID.length){
-        socket.emit('add me',activeUser);
+        UserStore.socket.emit('add me',activeUser);
+        UserStore.socket.emit('room',[activeUser.UUID]);
       }
     });
 
-    socket.on('user joined',(data) =>{
+    UserStore.socket.on('user joined',(data) =>{
       UserActions.updateActiveUsers(data.activeUsers);
     });
 
-    socket.on('user left', (user) =>{ UserActions.deleteUser(user); });
+    UserStore.socket.on('user left', (user) =>{
+      console.log(`${UserStore.activeUsers[user]} LEFT THE CHAT`);
+      UserActions.deleteUser(user);
+    });
   }
 
   handleSubmit(event){
-    let socket = this.state.socket;
 
     event.preventDefault();
     let encryptedName = btoa(this.state.username).replace(/\=/g,'');
@@ -56,7 +60,7 @@ export default class Login extends Component{
       uuid: currentCookie.substring(0,36)
     });
 
-    socket.emit('add me',{
+    UserStore.socket.emit('add me',{
       username: this.state.username,
       UUID: currentCookie.substring(0,36)
     });

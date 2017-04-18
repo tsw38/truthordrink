@@ -8,6 +8,7 @@ import dotenv from 'dotenv';
 import http from 'http';
 import getTruth from './routes/getTruth';
 import uuid from 'uuid/v4';
+import randomWord from 'random-word';
 
 dotenv.config();
 
@@ -54,16 +55,27 @@ app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
 
 
 let activeUsers = {};
+let privateUsers = {};
+
 function updateActiveUsers(user){
   if(!user.username.length){
     delete activeUsers[user.UUID];
-    console.log('\n\ndeleting');
   } else {
     activeUsers[user.UUID] = user.username;
-    console.log('\nadding');
   }
-  console.log(user);
-  console.log("\n\n");
+}
+function updatePrivateUsers(user){
+  if(!user.username.length){
+    delete privateUsers[user.UUID];
+  } else {
+    privateUsers[user.UUID] = {
+      username: user.username,
+      privateRoom: user.newRoom
+    };
+  }
+  console.log("--------------PRIVATE USERS--------------");
+  console.log(privateUsers);
+  console.log("--------------PRIVATE USERS--------------");
 }
 
 io.on('connect', handleSockets);
@@ -77,6 +89,64 @@ function handleSockets(socket){
     io.sockets.emit('user joined',{activeUsers:activeUsers});
   });
 
+  socket.on('room', (roomsArr)=>{
+    if(roomsArr.length === 1){ //user is joining their own room
+      socket.join(roomsArr[0]); //create a room for self
+      io.sockets.in(roomsArr[0]).emit('from server', {message:'you have created your own room'});
+    } else { //user is requesting to join another room
+      let usersInRoom = io.sockets.adapter.rooms[roomsArr[1]];
+      usersInRoom = (typeof usersInRoom !== 'undefined') ? usersInRoom.length : 0;
+      if(usersInRoom === 1){
+        io.sockets.in(roomsArr[1]).emit('from server',{leader:true}); //before user joins, designate leader
+        io.sockets.in(roomsArr[0]).emit('from server',{leader:false});
+        socket.join(roomsArr[1]);
+        var newRoom = randomWord();
+        io.sockets.in(roomsArr[1]).emit('from server',{
+          p1:{
+            name:activeUsers[roomsArr[0]],
+            uuid:roomsArr[0],
+            newRoom
+          },
+          p2:{
+            name:activeUsers[roomsArr[1]],
+            uuid:roomsArr[1],
+            newRoom
+          }
+        })
+
+        updatePrivateUsers({
+          username:activeUsers[roomsArr[0]],
+          UUID:roomsArr[0],
+          newRoom
+        });
+        updatePrivateUsers({
+          username:activeUsers[roomsArr[1]],
+          UUID:roomsArr[1],
+          newRoom
+        });
+
+      } else {
+        io.sockets.in(roomsArr[0]).emit('from server',{'message':"There are already two people in that room"});
+      }
+      console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+      //IF there is only one person in the room, accept the join, create secret room
+      //delete "activeUsers in group from total list
+
+
+    }
+
+    // console.log('another room is requesting to be added');
+
+  });
+
+
+  socket.on('delete group', (group)=>{
+    io.sockets.emit('global delete',group);
+
+
+    updateActiveUsers({username:'',UUID:group.p1.uuid});
+    updateActiveUsers({username:'',UUID:group.p2.uuid});
+  });
   // io.sockets.emit('user joined', {activeUsers:activeUsers });
 
   socket.on('disconnect', () =>{
