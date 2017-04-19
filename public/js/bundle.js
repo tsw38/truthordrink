@@ -22011,7 +22011,7 @@
 	    var _this = _possibleConstructorReturn(this, (Login.__proto__ || Object.getPrototypeOf(Login)).call(this, props));
 
 	    _this.state = {
-	      username: _this.oldUser() || '',
+	      name: _this.oldUser() || '',
 	      isset: _this.oldUser().length ? true : false,
 	      uuid: ''
 	    };
@@ -22025,35 +22025,39 @@
 	    key: 'componentDidMount',
 	    value: function componentDidMount() {
 	      var _uuid = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg');
+	      var isPrivate = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
 
 	      var activeUser = {
 	        UUID: _uuid.substring(0, 36),
-	        username: this.state.username
+	        name: this.state.name,
+	        private: typeof isPrivate !== 'undefined' ? true : false
 	      };
 
 	      _UserStore2.default.me = _uuid.substring(0, 36);
 
 	      _UserStore2.default.socket.on('connect', function () {
+	        console.log(activeUser);
 	        if (activeUser.UUID.length) {
 	          _UserStore2.default.socket.emit('add me', activeUser);
 	          _UserStore2.default.socket.emit('room', [activeUser.UUID]);
 	        }
 	      });
 
-	      _UserStore2.default.socket.on('user joined', function (data) {
-	        //TODO
-	      });
-
-	      _UserStore2.default.socket.on('user left', function (user) {
-	        _UserStore2.default.activeUsers.delete(user);
-	      });
+	      // UserStore.socket.on('user joined',(data) =>{
+	      //   //TODO
+	      // });
+	      //
+	      // UserStore.socket.on('user left', (user) =>{
+	      //   UserStore.activeUsers.delete(user);
+	      // });
 	    }
 	  }, {
 	    key: 'handleSubmit',
 	    value: function handleSubmit(event) {
-
 	      event.preventDefault();
-	      var encryptedName = btoa(this.state.username).replace(/\=/g, '');
+	      var isPrivate = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+
+	      var encryptedName = btoa(this.state.name).replace(/\=/g, '');
 	      var currentCookie = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg');
 
 	      _reactCookie2.default.save('dHJ1dGhvcmRyaW5rdXNlcg', currentCookie + '-' + encryptedName);
@@ -22064,26 +22068,27 @@
 	      });
 
 	      _UserStore2.default.socket.emit('add me', {
-	        username: this.state.username,
-	        UUID: currentCookie.substring(0, 36)
+	        name: this.state.name || '',
+	        UUID: currentCookie.substring(0, 36),
+	        private: typeof isPrivate !== 'undefined' ? true : false
 	      });
 	    }
 	  }, {
 	    key: 'oldUser',
 	    value: function oldUser() {
 	      var _cookie = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg') || '';
-	      var username = '';
+	      var name = '';
 
 	      if (_cookie.length > 36) {
-	        username = _cookie.substring(_cookie.indexOf('-', 36) + 1, _cookie.length);
-	        username = atob(username);
+	        name = _cookie.substring(_cookie.indexOf('-', 36) + 1, _cookie.length);
+	        name = atob(name);
 	      }
-	      return _cookie.length > 36 ? username : '';
+	      return _cookie.length > 36 ? name : '';
 	    }
 	  }, {
 	    key: 'handleNameUpdate',
 	    value: function handleNameUpdate(event) {
-	      this.setState({ username: event.target.value });
+	      this.setState({ name: event.target.value });
 	    }
 	  }, {
 	    key: 'render',
@@ -22098,7 +22103,7 @@
 	            'h2',
 	            null,
 	            'Welcome, ',
-	            this.state.username
+	            this.state.name
 	          ),
 	          _react2.default.createElement(
 	            'p',
@@ -22123,7 +22128,7 @@
 	              null,
 	              'Name:',
 	              _react2.default.createElement('br', null),
-	              _react2.default.createElement('input', { type: 'text', value: this.state.username, onChange: this.handleNameUpdate })
+	              _react2.default.createElement('input', { type: 'text', value: this.state.name, onChange: this.handleNameUpdate })
 	            ),
 	            _react2.default.createElement('input', { type: 'submit', value: 'Submit' })
 	          )
@@ -26751,7 +26756,10 @@
 	      var newRoom = '';
 	      _UserStore2.default.socket.on('user joined', function (message) {
 	        for (var uuid in message.activeUsers) {
-	          _UserStore2.default.activeUsers.set(uuid, message.activeUsers[uuid]);
+	          _UserStore2.default.activeUsers.set(uuid, {
+	            name: message.activeUsers[uuid].name,
+	            private: message.activeUsers[uuid].private
+	          });
 	        }
 	      });
 

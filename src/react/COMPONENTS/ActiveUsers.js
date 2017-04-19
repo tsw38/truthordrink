@@ -16,7 +16,10 @@ export default class ActiveUsers extends Component{
     let newRoom  = '';
     UserStore.socket.on('user joined', (message)=>{
       for(var uuid in message.activeUsers){
-        UserStore.activeUsers.set(uuid, message.activeUsers[uuid]);
+        UserStore.activeUsers.set(uuid, {
+          name:message.activeUsers[uuid].name,
+          private:message.activeUsers[uuid].private
+        });
       }
     });
 

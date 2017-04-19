@@ -51,6 +51,10 @@ app.use((req,res,next) => {
 app.use(express.static(__dirname + './../public'));
 app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
 
+io.on('connect', handleSockets); //all of the handshakes
+
+
+
 
 
 
@@ -58,18 +62,33 @@ let activeUsers = {};
 let privateUsers = {};
 
 function updateActiveUsers(user){
-  if(!user.username.length){
+  if(typeof user.name === 'undefined' || user.name.length === 0){
     delete activeUsers[user.UUID];
   } else {
-    activeUsers[user.UUID] = user.username;
+    activeUsers[user.UUID] = {
+      name: user.name,
+      private: user.private
+    }
   }
+  // if(!user.name.length){
+  //   delete activeUsers[user.UUID];
+  // } else {
+  //   activeUsers[user.UUID].name    = user.name;
+  //   activeUsers[user.UUID].private = user.private;
+  // }
+  console.log("\n--------------ACTIVE USERS--------------");
+  console.log(activeUsers);
+  console.log("--------------ACTIVE USERS--------------\n");
 }
+
+
+
 function updatePrivateUsers(user){
   if(!user.username.length){
     delete privateUsers[user.UUID];
   } else {
     privateUsers[user.UUID] = {
-      username: user.username,
+      username: user.name,
       privateRoom: user.newRoom
     };
   }
@@ -78,15 +97,21 @@ function updatePrivateUsers(user){
   console.log("--------------PRIVATE USERS--------------");
 }
 
-io.on('connect', handleSockets);
+
+
+
 
 function handleSockets(socket){
   socket.on('add me', (user)=>{
+    console.log("\n-------------- ADD ME --------------");
+    console.log(user);
     socket.UUID = user.UUID;
-    socket.username = user.username;
+    socket.NAME = user.name;
+    socket.ISPRIVATE = (typeof user.private === 'undefined') ? false : user.private;
+    console.log("-------------- ADD ME --------------\n");
     updateActiveUsers(user);
-
-    io.sockets.emit('user joined',{activeUsers:activeUsers});
+    //
+    // io.sockets.emit('user joined',{activeUsers:activeUsers});
   });
 
   socket.on('room', (roomsArr)=>{
@@ -123,16 +148,23 @@ function handleSockets(socket){
         io.sockets.in(roomsArr[0]).emit('from server',{'message':"There are already two people in that room"});
       }
       console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-      //IF there is only one person in the room, accept the join, create secret room
-      //delete "activeUsers in group from total list
-
-
     }
-
-    // console.log('another room is requesting to be added');
-
   });
 
+
+  socket.on('disconnect', () =>{
+    console.log("\n\n-------------- CLEAN ACTIVE USER POOL --------------");
+    console.log(socket.UUID);
+    console.log(socket.NAME);
+    console.log(socket.PRIVATE);
+    updateActiveUsers({
+      name: '',
+      UUID: socket.UUID
+    });
+    console.log("-------------- CLEAN ACTIVE USER POOL --------------\n\n");
+    socket.broadcast.emit('user left',socket.UUID);
+
+  })
 
   socket.on('private group initialize', (group)=>{
     // io.sockets.emit('user left',group);
@@ -140,18 +172,12 @@ function handleSockets(socket){
     updateActiveUsers({username:'',UUID:group.p1.uuid});
     updateActiveUsers({username:'',UUID:group.p2.uuid});
   });
-  // io.sockets.emit('user joined', {activeUsers:activeUsers });
 
-  socket.on('disconnect', () =>{
-    socket.broadcast.emit('user left',socket.UUID);
-    updateActiveUsers({
-      username: '',
-      UUID: socket.UUID
-    });
-  })
+
+
 }
 
-server.listen(process.env.APP_PORT, '0.0.0.0', () => {
+server.listen(process.env.APP_PORT, '0.0.0.0', () => { //broadcast to network
   console.log(`Listening to port ${process.env.APP_PORT}`);
 });
 
