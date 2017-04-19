@@ -1,9 +1,8 @@
 import React, { Component } from 'react';
 import cookie from 'react-cookie';
-import UserActions from '../ACTIONS/UserActions';
 import UserStore from '../STORES/UserStore';
 
-import { observer } from 'mobx-react';
+import { observer, action } from 'mobx-react';
 
 @observer
 export default class Login extends Component{
@@ -38,12 +37,11 @@ export default class Login extends Component{
     });
 
     UserStore.socket.on('user joined',(data) =>{
-      UserActions.updateActiveUsers(data.activeUsers);
+      //TODO
     });
 
     UserStore.socket.on('user left', (user) =>{
-      console.log(`${UserStore.activeUsers[user]} LEFT THE CHAT`);
-      UserActions.deleteUser(user);
+      UserStore.activeUsers.delete(user);
     });
   }
 

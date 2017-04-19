@@ -97,22 +97,16 @@ function handleSockets(socket){
       let usersInRoom = io.sockets.adapter.rooms[roomsArr[1]];
       usersInRoom = (typeof usersInRoom !== 'undefined') ? usersInRoom.length : 0;
       if(usersInRoom === 1){
+        console.log("----------------------THERE IS ONLY ! PERSON----------------");
         io.sockets.in(roomsArr[1]).emit('from server',{leader:true}); //before user joins, designate leader
         io.sockets.in(roomsArr[0]).emit('from server',{leader:false});
-        socket.join(roomsArr[1]);
+        socket.join(roomsArr[1]); //auto join requested room
+
+        io.sockets.emit('user left',roomsArr[0]); //tell everone that they left
+        io.sockets.emit('user left',roomsArr[1]);
+
         var newRoom = randomWord();
-        io.sockets.in(roomsArr[1]).emit('from server',{
-          p1:{
-            name:activeUsers[roomsArr[0]],
-            uuid:roomsArr[0],
-            newRoom
-          },
-          p2:{
-            name:activeUsers[roomsArr[1]],
-            uuid:roomsArr[1],
-            newRoom
-          }
-        })
+        io.sockets.in(roomsArr[1]).emit('from server',{newRoom,roomsArr});
 
         updatePrivateUsers({
           username:activeUsers[roomsArr[0]],
@@ -140,9 +134,8 @@ function handleSockets(socket){
   });
 
 
-  socket.on('delete group', (group)=>{
-    io.sockets.emit('global delete',group);
-
+  socket.on('private group initialize', (group)=>{
+    // io.sockets.emit('user left',group);
 
     updateActiveUsers({username:'',UUID:group.p1.uuid});
     updateActiveUsers({username:'',UUID:group.p2.uuid});

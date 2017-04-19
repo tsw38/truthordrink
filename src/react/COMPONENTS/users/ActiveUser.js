@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import cookie from 'react-cookie';
-import UserActions from '../../ACTIONS/UserActions';
+import UserStore from '../../STORES/UserStore';
 
 export default class ActiveUser extends Component{
   constructor(props){
@@ -18,7 +18,7 @@ export default class ActiveUser extends Component{
     if(me.length > 36){
       let _me = me.substring(0,36);
       if(_me !== this.state.uuid && typeof group === 'undefined'){
-        UserActions.askToJoinRoom(_me,this.state.uuid);
+        UserStore.socket.emit('room',[_me, this.state.uuid]);
       }
       if(typeof group !== 'undefined'){
         console.log("you are already in a group");

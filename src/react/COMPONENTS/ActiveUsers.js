@@ -3,7 +3,6 @@ import cookie from 'react-cookie';
 import { observer } from 'mobx-react';
 import ActiveUserList from './users/ActiveUserList';
 import UserStore from '../STORES/UserStore';
-import UserActions from '../ACTIONS/UserActions';
 
 @observer
 export default class ActiveUsers extends Component{
@@ -14,24 +13,24 @@ export default class ActiveUsers extends Component{
   componentDidMount(){
     let hasGroup = cookie.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
     let isLeader = '';
+    let newRoom  = '';
+    UserStore.socket.on('user joined', (message)=>{
+      for(var uuid in message.activeUsers){
+        UserStore.activeUsers.set(uuid, message.activeUsers[uuid]);
+      }
+    });
+
     UserStore.socket.on('from server', (message)=>{
       if('leader' in message && !isLeader.length){
         isLeader = (message.leader) ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
       }
-      else if(typeof hasGroup === 'undefined' && ('p1' in message)){
-        const val = `${message.p1.uuid}=${message.p2.uuid}=${isLeader}`;
-        cookie.save('DHJ1dGhvcmRyaW5rZ3JvdXA', `${val}`);
-        UserStore.socket.emit('delete group',message);
+      if('newRoom' in message && !newRoom.length){
+        newRoom = message.newRoom;
       }
-      console.log(message);
-    });
-    UserStore.socket.on('global delete',(payload)=>{
-      console.log(")))))))))))))))))))))))))))))))))")
-      console.log(payload.p1.uuid);
-      console.log(payload.p2.uuid);
-      UserActions.deleteUser(payload.p1.uuid);
-      // UserActions.deleteUser(payload.p2.uuid);
-      console.log(")))))))))))))))))))))))))))))))))")
+      if(newRoom.length && isLeader.length){
+        const val = `${message.roomsArr[0]}=${message.roomsArr[1]}=${isLeader}`;
+        cookie.save('DHJ1dGhvcmRyaW5rZ3JvdXA', `${val}`);
+      }
     });
   }
 

@@ -1,11 +1,25 @@
-import { autorun, observable } from 'mobx';
+import { autorun, observable, action } from 'mobx';
 import cookie from 'react-cookie';
 //autorun is only for debugging generally
 class UserStore {
-  @observable activeUsers = {};
+  @observable activeUsers = observable.map();
   @observable me = '';
   @observable leader = '';
   @observable socket = io.connect(`//${window.location.hostname}:6357`);
+
+  @action
+  updateActiveUsers(actives){
+    // console.log("I NED TO UPDATE THINGS");
+    // console.log(actives);
+    // this.activeUsers = actives;
+  }
+
+  @action
+  deleteUser(uuid){
+    delete this.activeUsers[uuid];
+  }
+
+
 
   constructor(){
     this.activeUsers = this.activeUsers;
@@ -13,17 +27,9 @@ class UserStore {
     this.me = this.me;
     this.leader = this.leader;
 
-    console.log('what');
-    let disappear = cookie.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
-    disappear = (typeof disappear !== 'undefined') ? disappear.split("=") : -1;
-    console.log('what2')
-    console.log(disappear);
-    if(disappear !== -1){
-      delete this.activeUsers[disappear[0]];
-      delete this.activeUsers[disappear[1]];
-    }
-
-    console.log("HELLO FROM THE OTHER SIDE");
+    this.deleteUser = this.deleteUser.bind(this);
+    this.updateActiveUsers = this.updateActiveUsers.bind(this);
+    // this.updateUsers = this.updateUsers.bind(this)
   }
 }
 
