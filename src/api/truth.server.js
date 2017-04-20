@@ -9,6 +9,8 @@ import http from 'http';
 import getTruth from './routes/getTruth';
 import uuid from 'uuid/v4';
 import randomWord from 'random-word';
+import btoa from 'btoa';
+import atob from 'atob';
 
 dotenv.config();
 
@@ -59,7 +61,6 @@ io.on('connect', handleSockets); //all of the handshakes
 
 
 let activeUsers = {};
-let privateUsers = {};
 
 function updateActiveUsers(user){
   if(typeof user.name === 'undefined' || user.name.length === 0){
@@ -70,48 +71,36 @@ function updateActiveUsers(user){
       private: user.private
     }
   }
-  // if(!user.name.length){
-  //   delete activeUsers[user.UUID];
-  // } else {
-  //   activeUsers[user.UUID].name    = user.name;
-  //   activeUsers[user.UUID].private = user.private;
-  // }
-  console.log("\n--------------ACTIVE USERS--------------");
+  console.log("\n\n\n\n--------------ACTIVE USERS--------------");
   console.log(activeUsers);
-  console.log("--------------ACTIVE USERS--------------\n");
+  console.log("--------------ACTIVE USERS--------------\n\n\n\n");
 }
 
-
-
-function updatePrivateUsers(user){
-  if(!user.username.length){
-    delete privateUsers[user.UUID];
+let privateRooms = {}
+function handlePrivateRooms(roomName,usersArr){
+  if(typeof usersArr === 'undefined' || usersArr.length === 0){
+    delete privateRooms[roomName];
   } else {
-    privateUsers[user.UUID] = {
-      username: user.name,
-      privateRoom: user.newRoom
-    };
+    privateRooms[roomName] = usersArr;
   }
-  console.log("--------------PRIVATE USERS--------------");
-  console.log(privateUsers);
-  console.log("--------------PRIVATE USERS--------------");
+  console.log("\n\n\n\n-------------- PRIVATE ROOMS --------------");
+  console.log(privateRooms);
+  console.log("-------------- PRIVATE ROOMS --------------\n\n\n\n");
 }
-
-
 
 
 
 function handleSockets(socket){
   socket.on('add me', (user)=>{
-    console.log("\n-------------- ADD ME --------------");
+    console.log("\n\n\n\n-------------- ADD ME --------------");
     console.log(user);
     socket.UUID = user.UUID;
     socket.NAME = user.name;
     socket.ISPRIVATE = (typeof user.private === 'undefined') ? false : user.private;
-    console.log("-------------- ADD ME --------------\n");
+    console.log("-------------- ADD ME --------------\n\n\n\n");
     updateActiveUsers(user);
-    //
-    // io.sockets.emit('user joined',{activeUsers:activeUsers});
+
+    io.sockets.emit('user joined',{activeUsers:activeUsers});
   });
 
   socket.on('room', (roomsArr)=>{
@@ -122,38 +111,50 @@ function handleSockets(socket){
       let usersInRoom = io.sockets.adapter.rooms[roomsArr[1]];
       usersInRoom = (typeof usersInRoom !== 'undefined') ? usersInRoom.length : 0;
       if(usersInRoom === 1){
-        console.log("----------------------THERE IS ONLY ! PERSON----------------");
-        io.sockets.in(roomsArr[1]).emit('from server',{leader:true}); //before user joins, designate leader
-        io.sockets.in(roomsArr[0]).emit('from server',{leader:false});
-        socket.join(roomsArr[1]); //auto join requested room
+        var newRoom = btoa(randomWord()).replace(/\=/g,'');
+
+        io.sockets.in(roomsArr[0]).emit('from server',{
+          leader:true,
+          newRoom,
+          roomsArr
+        });
+        io.sockets.in(roomsArr[1]).emit('from server',{
+          leader:true,
+          newRoom,
+          roomsArr
+        });
+
+        updateActiveUsers({
+          username:activeUsers[roomsArr[0]],
+          UUID:roomsArr[0],
+          private:true
+        });
+
+        updateActiveUsers({
+          username:activeUsers[roomsArr[1]],
+          UUID:roomsArr[1],
+          private:true
+        });
+
+        handlePrivateRooms(newRoom,[roomsArr[0],roomsArr[1]]);
 
         io.sockets.emit('user left',roomsArr[0]); //tell everone that they left
         io.sockets.emit('user left',roomsArr[1]);
-
-        var newRoom = randomWord();
-        io.sockets.in(roomsArr[1]).emit('from server',{newRoom,roomsArr});
-
-        updatePrivateUsers({
-          username:activeUsers[roomsArr[0]],
-          UUID:roomsArr[0],
-          newRoom
-        });
-        updatePrivateUsers({
-          username:activeUsers[roomsArr[1]],
-          UUID:roomsArr[1],
-          newRoom
-        });
-
       } else {
         io.sockets.in(roomsArr[0]).emit('from server',{'message':"There are already two people in that room"});
       }
-      console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>");
+      console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n\n\n");
     }
   });
 
 
+  socket.on('truth-or-drink', (request)=>{
+    socket.join(request.roomName);
+    //TODO complete the handshake
+  })
+
   socket.on('disconnect', () =>{
-    console.log("\n\n-------------- CLEAN ACTIVE USER POOL --------------");
+    console.log("\n\n\n\n-------------- CLEAN ACTIVE USER POOL --------------");
     console.log(socket.UUID);
     console.log(socket.NAME);
     console.log(socket.PRIVATE);
@@ -161,7 +162,7 @@ function handleSockets(socket){
       name: '',
       UUID: socket.UUID
     });
-    console.log("-------------- CLEAN ACTIVE USER POOL --------------\n\n");
+    console.log("-------------- CLEAN ACTIVE USER POOL --------------\n\n\n\n");
     socket.broadcast.emit('user left',socket.UUID);
 
   })

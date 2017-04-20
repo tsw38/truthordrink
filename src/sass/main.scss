@@ -47,6 +47,20 @@ body{
     .active-users{
       width:50%;
       background-color:LightSeaGreen;
+
+      ul{
+
+        li{
+          cursor:default;
+          -webkit-user-select:none;
+          user-select:none;
+
+          &:hover{
+            color:lighten(black,15%);
+            background-color:lighten(LightSeaGreen,15%);
+          }
+        }
+      }
     }
   }
 }

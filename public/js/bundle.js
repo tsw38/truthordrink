@@ -64,7 +64,7 @@
 
 	var _CardWrapper2 = _interopRequireDefault(_CardWrapper);
 
-	var _TruthStore = __webpack_require__(194);
+	var _TruthStore = __webpack_require__(193);
 
 	var _TruthStore2 = _interopRequireDefault(_TruthStore);
 
@@ -84,32 +84,10 @@
 	  function App() {
 	    _classCallCheck(this, App);
 
-	    var _this = _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).call(this));
-
-	    _this.socket = _this.socket.bind(_this);
-	    return _this;
+	    return _possibleConstructorReturn(this, (App.__proto__ || Object.getPrototypeOf(App)).apply(this, arguments));
 	  }
 
 	  _createClass(App, [{
-	    key: 'componentDidMount',
-	    value: function componentDidMount() {
-	      this.socket();
-	    }
-	  }, {
-	    key: 'socket',
-	    value: function socket() {
-	      // let socket = io.connect(`//${window.location.hostname}:6357`);
-	      //
-	      // socket.on('news', function(data){
-	      //   console.log('news',data);
-	      // });
-	      //
-	      // socket.on('private',function(data){
-	      //   console.log("PRIVATE:",data);
-	      //   socket.emit('private',{msg:'TANKS'}); //message to private room
-	      // });
-	    }
-	  }, {
 	    key: 'render',
 	    value: function render() {
 	      return _react2.default.createElement(
@@ -22036,7 +22014,6 @@
 	      _UserStore2.default.me = _uuid.substring(0, 36);
 
 	      _UserStore2.default.socket.on('connect', function () {
-	        console.log(activeUser);
 	        if (activeUser.UUID.length) {
 	          _UserStore2.default.socket.emit('add me', activeUser);
 	          _UserStore2.default.socket.emit('room', [activeUser.UUID]);
@@ -22047,9 +22024,9 @@
 	      //   //TODO
 	      // });
 	      //
-	      // UserStore.socket.on('user left', (user) =>{
-	      //   UserStore.activeUsers.delete(user);
-	      // });
+	      _UserStore2.default.socket.on('user left', function (user) {
+	        _UserStore2.default.activeUsers.delete(user);
+	      });
 	    }
 	  }, {
 	    key: 'handleSubmit',
@@ -26723,13 +26700,13 @@
 
 	var _mobxReact = __webpack_require__(190);
 
-	var _ActiveUserList = __webpack_require__(192);
-
-	var _ActiveUserList2 = _interopRequireDefault(_ActiveUserList);
-
 	var _UserStore = __webpack_require__(188);
 
 	var _UserStore2 = _interopRequireDefault(_UserStore);
+
+	var _ActiveUser = __webpack_require__(192);
+
+	var _ActiveUser2 = _interopRequireDefault(_ActiveUser);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -26745,7 +26722,10 @@
 	  function ActiveUsers(props) {
 	    _classCallCheck(this, ActiveUsers);
 
-	    return _possibleConstructorReturn(this, (ActiveUsers.__proto__ || Object.getPrototypeOf(ActiveUsers)).call(this, props));
+	    var _this = _possibleConstructorReturn(this, (ActiveUsers.__proto__ || Object.getPrototypeOf(ActiveUsers)).call(this, props));
+
+	    _this.generateList = _this.generateList.bind(_this);
+	    return _this;
 	  }
 
 	  _createClass(ActiveUsers, [{
@@ -26754,16 +26734,13 @@
 	      var hasGroup = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
 	      var isLeader = '';
 	      var newRoom = '';
-	      _UserStore2.default.socket.on('user joined', function (message) {
-	        for (var uuid in message.activeUsers) {
-	          _UserStore2.default.activeUsers.set(uuid, {
-	            name: message.activeUsers[uuid].name,
-	            private: message.activeUsers[uuid].private
-	          });
-	        }
-	      });
 
 	      _UserStore2.default.socket.on('from server', function (message) {
+	        console.log("____________________________________");
+	        console.log("____________________________________");
+	        console.log(message);
+	        console.log("____________________________________");
+	        console.log("____________________________________");
 	        if ('leader' in message && !isLeader.length) {
 	          isLeader = message.leader ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
 	        }
@@ -26771,10 +26748,38 @@
 	          newRoom = message.newRoom;
 	        }
 	        if (newRoom.length && isLeader.length) {
-	          var val = message.roomsArr[0] + '=' + message.roomsArr[1] + '=' + isLeader;
+	          var val = message.roomsArr[0] + '-' + message.roomsArr[1] + '-' + isLeader + '-' + newRoom;
 	          _reactCookie2.default.save('DHJ1dGhvcmRyaW5rZ3JvdXA', '' + val);
 	        }
 	      });
+
+	      _UserStore2.default.socket.on('user joined', function (message) {
+	        console.log("||||||||||||||||||||||||||||||||||||||||||");
+	        console.log(message);
+	        console.log("||||||||||||||||||||||||||||||||||||||||||");
+	        for (var uuid in message.activeUsers) {
+	          _UserStore2.default.activeUsers.set(uuid, {
+	            name: message.activeUsers[uuid].name,
+	            private: message.activeUsers[uuid].private
+	          });
+	        }
+	      });
+	    }
+	  }, {
+	    key: 'generateList',
+	    value: function generateList() {
+	      var _activeUsers = _UserStore2.default.activeUsers.toJS();
+	      var userList = [];
+	      for (var key in _activeUsers) {
+	        if (!_activeUsers[key].private) {
+	          userList.push(_react2.default.createElement(_ActiveUser2.default, {
+	            key: key,
+	            user: _activeUsers[key].name,
+	            uuid: key
+	          }));
+	        }
+	      }
+	      return userList;
 	    }
 	  }, {
 	    key: 'render',
@@ -26782,7 +26787,11 @@
 	      return _react2.default.createElement(
 	        'div',
 	        { className: 'right active-users' },
-	        _react2.default.createElement(_ActiveUserList2.default, null)
+	        _react2.default.createElement(
+	          'ul',
+	          null,
+	          this.generateList()
+	        )
 	      );
 	    }
 	  }]);
@@ -26794,80 +26803,6 @@
 
 /***/ }),
 /* 192 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-	exports.default = undefined;
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _class;
-
-	var _react = __webpack_require__(1);
-
-	var _react2 = _interopRequireDefault(_react);
-
-	var _UserStore = __webpack_require__(188);
-
-	var _UserStore2 = _interopRequireDefault(_UserStore);
-
-	var _mobxReact = __webpack_require__(190);
-
-	var _ActiveUser = __webpack_require__(193);
-
-	var _ActiveUser2 = _interopRequireDefault(_ActiveUser);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
-
-	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-
-	var ActiveUserList = (0, _mobxReact.observer)(_class = function (_Component) {
-	  _inherits(ActiveUserList, _Component);
-
-	  function ActiveUserList(props) {
-	    _classCallCheck(this, ActiveUserList);
-
-	    return _possibleConstructorReturn(this, (ActiveUserList.__proto__ || Object.getPrototypeOf(ActiveUserList)).call(this, props));
-	  }
-
-	  _createClass(ActiveUserList, [{
-	    key: 'render',
-	    value: function render() {
-	      var userList = [];
-	      _UserStore2.default.activeUsers.forEach(function (val, key, obj) {
-	        userList.push(_react2.default.createElement(_ActiveUser2.default, {
-	          key: key,
-	          user: val,
-	          uuid: key
-	        }));
-	      });
-	      return _react2.default.createElement(
-	        'div',
-	        { className: 'right active-users' },
-	        _react2.default.createElement(
-	          'ul',
-	          null,
-	          userList
-	        )
-	      );
-	    }
-	  }]);
-
-	  return ActiveUserList;
-	}(_react.Component)) || _class;
-
-	exports.default = ActiveUserList;
-
-/***/ }),
-/* 193 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -26922,11 +26857,14 @@
 	      var group = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
 	      if (me.length > 36) {
 	        var _me = me.substring(0, 36);
-	        if (_me !== this.state.uuid && typeof group === 'undefined') {
-	          _UserStore2.default.socket.emit('room', [_me, this.state.uuid]);
-	        }
-	        if (typeof group !== 'undefined') {
-	          console.log("you are already in a group");
+	        if (this.state.uuid !== _me) {
+	          if (typeof group === 'undefined') {
+	            _UserStore2.default.socket.emit('room', [_me, this.state.uuid]);
+	          } else if (typeof group !== 'undefined') {
+	            console.log("you are already in a group");
+	          }
+	        } else {
+	          console.log('you clicked on yourself');
 	        }
 	      } else {
 	        console.log('you need to sign in');
@@ -26951,7 +26889,7 @@
 	exports.default = ActiveUser;
 
 /***/ }),
-/* 194 */
+/* 193 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';

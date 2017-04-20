@@ -1,29 +1,28 @@
 import React, { Component } from 'react';
 import cookie from 'react-cookie';
 import { observer } from 'mobx-react';
-import ActiveUserList from './users/ActiveUserList';
+
 import UserStore from '../STORES/UserStore';
+import ActiveUser from './users/ActiveUser';
 
 @observer
 export default class ActiveUsers extends Component{
   constructor(props){
     super(props);
+    this.generateList = this.generateList.bind(this);
   }
 
   componentDidMount(){
     let hasGroup = cookie.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
     let isLeader = '';
     let newRoom  = '';
-    UserStore.socket.on('user joined', (message)=>{
-      for(var uuid in message.activeUsers){
-        UserStore.activeUsers.set(uuid, {
-          name:message.activeUsers[uuid].name,
-          private:message.activeUsers[uuid].private
-        });
-      }
-    });
 
     UserStore.socket.on('from server', (message)=>{
+      console.log("____________________________________")
+      console.log("____________________________________")
+      console.log(message);
+      console.log("____________________________________")
+      console.log("____________________________________")
       if('leader' in message && !isLeader.length){
         isLeader = (message.leader) ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
       }
@@ -31,16 +30,47 @@ export default class ActiveUsers extends Component{
         newRoom = message.newRoom;
       }
       if(newRoom.length && isLeader.length){
-        const val = `${message.roomsArr[0]}=${message.roomsArr[1]}=${isLeader}`;
+        const val = `${message.roomsArr[0]}-${message.roomsArr[1]}-${isLeader}-${newRoom}`;
         cookie.save('DHJ1dGhvcmRyaW5rZ3JvdXA', `${val}`);
       }
     });
+
+    UserStore.socket.on('user joined', (message)=>{
+      console.log("||||||||||||||||||||||||||||||||||||||||||")
+      console.log(message);
+      console.log("||||||||||||||||||||||||||||||||||||||||||")
+      for(var uuid in message.activeUsers){
+        UserStore.activeUsers.set(uuid, {
+          name:message.activeUsers[uuid].name,
+          private:message.activeUsers[uuid].private
+        });
+      }
+    });
+  }
+
+  generateList(){
+    let _activeUsers = UserStore.activeUsers.toJS();
+    let userList = [];
+    for(let key in _activeUsers){
+      if(!_activeUsers[key].private){
+        userList.push(
+          <ActiveUser
+            key={key}
+            user={_activeUsers[key].name}
+            uuid={key}
+          />
+        )
+      }
+    }
+    return userList;
   }
 
   render(){
     return(
       <div className="right active-users">
-        <ActiveUserList />
+        <ul>
+          {this.generateList()}
+        </ul>
       </div>
     );
   }

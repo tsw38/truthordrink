@@ -32,7 +32,6 @@ export default class Login extends Component{
 
 
     UserStore.socket.on('connect',()=>{
-      console.log(activeUser);
       if(activeUser.UUID.length){
         UserStore.socket.emit('add me',activeUser);
         UserStore.socket.emit('room',[activeUser.UUID]);
@@ -43,9 +42,9 @@ export default class Login extends Component{
     //   //TODO
     // });
     //
-    // UserStore.socket.on('user left', (user) =>{
-    //   UserStore.activeUsers.delete(user);
-    // });
+    UserStore.socket.on('user left', (user) =>{
+      UserStore.activeUsers.delete(user);
+    });
   }
 
   handleSubmit(event){
@@ -78,7 +77,6 @@ export default class Login extends Component{
       name = atob(name);
     }
     return (_cookie.length > 36) ? name : '';
-
   }
 
   handleNameUpdate(event){
