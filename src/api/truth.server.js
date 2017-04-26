@@ -3,10 +3,12 @@ import bodyParser from 'body-parser';
 import cookieParser from 'cookie-parser';
 import favicon from 'serve-favicon';
 import path from 'path';
+import morgan from 'morgan';
 import mysql from 'mysql';
 import dotenv from 'dotenv';
 import http from 'http';
 import getTruth from './routes/getTruth';
+import gameRoute from './routes/game';
 import uuid from 'uuid/v4';
 import randomWord from 'random-word';
 import btoa from 'btoa';
@@ -27,6 +29,7 @@ const con    = mysql.createConnection({
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended:true}));
 app.use(cookieParser());
+app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] :response-time ms'));
 
 app.use((req,res,next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -50,8 +53,13 @@ app.use((req,res,next) => {
 
 // getTruth(app,mysql);
 
+
 app.use(express.static(__dirname + './../public'));
+app.use('/game/:hash', express.static(__dirname + './../public'));
 app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
+gameRoute(app,mysql,path);
+
+
 
 io.on('connect', handleSockets); //all of the handshakes
 

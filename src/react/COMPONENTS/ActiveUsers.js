@@ -32,6 +32,7 @@ export default class ActiveUsers extends Component{
       if(newRoom.length && isLeader.length){
         const val = `${message.roomsArr[0]}-${message.roomsArr[1]}-${isLeader}-${newRoom}`;
         cookie.save('DHJ1dGhvcmRyaW5rZ3JvdXA', `${val}`);
+        window.location = `game/${val}`;
       }
     });
 
