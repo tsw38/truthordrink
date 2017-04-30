@@ -28556,6 +28556,7 @@
 	      var activeUser = {
 	        UUID: _uuid.substring(0, 36),
 	        name: this.state.name,
+	        error: false,
 	        private: typeof isPrivate !== 'undefined' ? true : false
 	      };
 
@@ -28580,23 +28581,30 @@
 	    key: 'handleSubmit',
 	    value: function handleSubmit(event) {
 	      event.preventDefault();
-	      var isPrivate = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+	      if (this.state.name.trim().length) {
+	        var isPrivate = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
 
-	      var encryptedName = btoa(this.state.name).replace(/\=/g, '');
-	      var currentCookie = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg');
+	        var encryptedName = btoa(this.state.name).replace(/\=/g, '');
+	        var currentCookie = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg');
 
-	      _reactCookie2.default.save('dHJ1dGhvcmRyaW5rdXNlcg', currentCookie + '-' + encryptedName);
+	        _reactCookie2.default.save('dHJ1dGhvcmRyaW5rdXNlcg', currentCookie + '-' + encryptedName);
 
-	      this.setState({
-	        isset: true,
-	        uuid: currentCookie.substring(0, 36)
-	      });
+	        this.setState({
+	          isset: true,
+	          uuid: currentCookie.substring(0, 36),
+	          error: false
+	        });
 
-	      _UserStore2.default.socket.emit('add me', {
-	        name: this.state.name || '',
-	        UUID: currentCookie.substring(0, 36),
-	        private: typeof isPrivate !== 'undefined' ? true : false
-	      });
+	        _UserStore2.default.socket.emit('add me', {
+	          name: this.state.name || '',
+	          UUID: currentCookie.substring(0, 36),
+	          private: typeof isPrivate !== 'undefined' ? true : false
+	        });
+	      } else {
+	        this.setState({
+	          error: true
+	        });
+	      }
 	    }
 	  }, {
 	    key: 'oldUser',
@@ -28613,7 +28621,14 @@
 	  }, {
 	    key: 'handleNameUpdate',
 	    value: function handleNameUpdate(event) {
-	      this.setState({ name: event.target.value });
+	      this.setState({
+	        name: event.target.value
+	      });
+	      if (this.state.error) {
+	        this.setState({
+	          error: false
+	        });
+	      }
 	    }
 	  }, {
 	    key: 'render',
@@ -28627,13 +28642,18 @@
 	          _react2.default.createElement(
 	            'h2',
 	            null,
-	            'Welcome, ',
-	            this.state.name
+	            'Welcome ',
+	            _react2.default.createElement(
+	              'span',
+	              null,
+	              this.state.name
+	            ),
+	            ','
 	          ),
 	          _react2.default.createElement(
 	            'p',
 	            null,
-	            'Please choose a user to create a game with'
+	            'Please choose a user to drink with.'
 	          )
 	        );
 	      } else {
@@ -28642,20 +28662,23 @@
 	          { className: 'left sign-in' },
 	          _react2.default.createElement(
 	            'h2',
-	            null,
+	            { className: this.state.error ? "error" : '' },
 	            'Enter Username'
 	          ),
 	          _react2.default.createElement(
 	            'form',
 	            { onSubmit: this.handleSubmit },
-	            _react2.default.createElement(
-	              'label',
-	              null,
-	              'Name:',
-	              _react2.default.createElement('br', null),
-	              _react2.default.createElement('input', { type: 'text', value: this.state.name, onChange: this.handleNameUpdate })
-	            ),
-	            _react2.default.createElement('input', { type: 'submit', value: 'Submit' })
+	            _react2.default.createElement('input', {
+	              type: 'text',
+	              value: this.state.name,
+	              className: this.state.error ? "error" : '',
+	              onChange: this.handleNameUpdate
+	            }),
+	            _react2.default.createElement('input', {
+	              type: 'submit',
+	              className: this.state.error ? "error" : '',
+	              value: 'Submit'
+	            })
 	          )
 	        );
 	      }
@@ -30493,12 +30516,20 @@
 	  }, {
 	    key: 'render',
 	    value: function render() {
+	      var me = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg');
+	      console.log(me);
+	      console.log();
 	      return _react2.default.createElement(
 	        'li',
 	        {
 	          key: this.props.uuid,
 	          onClick: this.handleOnActiveClick },
-	        this.props.user
+	        this.props.user,
+	        me.match(this.props.uuid) && _react2.default.createElement(
+	          'span',
+	          null,
+	          '(me)'
+	        )
 	      );
 	    }
 	  }]);

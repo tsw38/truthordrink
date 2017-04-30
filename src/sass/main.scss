@@ -1,10 +1,22 @@
 @import 'compass/reset',
         'compass/css3';
 
+@import url('https://fonts.googleapis.com/css?family=PT+Sans:400,700');
+$orange: #ff7e00;
+$hotpink: #ff003c;
+
+html,body{
+  font-family: 'PT Sans', sans-serif;
+}
+
+*{
+  -webkit-font-smoothing:antialiased;
+}
 body{
-  background-image: linear-gradient(to left, #ff003c 0%, #ff7e00 100%);
+  background-image: linear-gradient(to left, $hotpink 0%, $orange 100%);
   background-attachment:fixed;
   background-repeat: no-repeat;
+  font-size:30px;
 }
 .content-wrapper{
   width:99vw;
@@ -32,32 +44,163 @@ body{
   .card-wrapper{
     background-color:white;
     @include display-flex;
-    @include flex-grow(0);
+    @include flex-shrink(1);
+    @include flex-grow(1);
+    @include justify-content(space-between);
     width:75vw;
     height:calc(65vh - 50px);
+    max-height:calc(65vh - 50px);
     border-radius:10px;
     box-shadow: 0 3px 0px 1px #ababab;
     overflow:hidden;
 
+    .left,.right{
+      @include flex-shrink(1);
+      @include flex-grow(1);
+      width:50%;
+      padding:20px;
+    }
 
     .sign-in{
-      width:50%;
-      background-color:coral;
+      @include display-flex;
+      @include flex-shrink(1);
+      @include flex-grow(1);
+      @include justify-content(center);
+      @include flex-direction(column);
+      @include align-items(center);
+      height:auto;
+
+      h2{
+        text-transform:uppercase;
+        font-weight:400;
+        margin:2% 0;
+        font-size:1em;
+        color:darken(#ccc,20%);
+        @include transition(color 0.15s ease-in-out);
+
+
+        &.error{
+          color:$hotpink;
+          @include transition(color 0.15s ease-in-out);
+        }
+      }
+
+      form{
+        @include display-flex;
+        @include flex-shrink(0);
+        @include flex-grow(0);
+        width:40%;
+        @include flex-direction(column);
+
+        input[type="text"]{
+          border:none;
+          border-bottom:1px solid darken(#ccc,20%);
+          padding:0.1em;
+          margin:5% 0 10%;
+          font-size:1em;
+          @include transition(border-bottom 0.15s ease-in-out);
+
+          &:focus{
+            outline-style:none;
+            outline:none;
+          }
+
+          &.error{
+            border-bottom:1px solid $hotpink;
+            @include transition(border-bottom 0.15s ease-in-out);
+          }
+        }
+        input[type="submit"]{
+          font-size:0.8em;
+          text-transform:uppercase;
+          padding:0.4em 0.2em;
+          border:2px solid $orange;
+          border-radius:0.25em;
+          line-height:1;
+          background-color:white;
+          color:$orange;
+          cursor:pointer;
+          @include transition(color 0.15s ease-in-out,background-color 0.15s ease-in-out);
+
+          &:hover{
+            background-color:$orange;
+            color:white;
+            @include transition(color 0.15s ease-in-out,background-color 0.15s ease-in-out);
+          }
+          &:focus{
+            outline-style:none;
+            outline:none;
+          }
+
+          &.error{
+            border:2px solid $hotpink;
+            color:$hotpink;
+
+            &:hover{
+              background-color:$hotpink;
+              color:white;
+              @include transition(color 0.15s ease-in-out,background-color 0.15s ease-in-out);
+            }
+          }
+        }
+      }
     }
+
+    .logged-in{
+      @include display-flex;
+      @include justify-content(center);
+      @include flex-direction(column);
+      @include align-items(center);
+
+      h2{
+        text-transform:uppercase;
+        font-weight:400;
+        margin:2% 0;
+        font-size:1em;
+        color:darken(#ccc,20%);
+      }
+      p{
+        font-size:0.45em;
+        font-weight:500;
+        text-transform:uppercase;
+        color:darken(#ccc,70%);
+        letter-spacing:0.025em;
+      }
+    }
+
     .active-users{
       width:50%;
-      background-color:LightSeaGreen;
+      background-color:darken(white,10%);
 
       ul{
 
         li{
-          cursor:default;
+          display:table;
+
+          text-transform: uppercase;
+          font-weight: 400;
+          margin: 2% 0;
+          font-size: 0.65em;
+          cursor:pointer;
           -webkit-user-select:none;
           user-select:none;
+          color: darken(#ccc, 60%);
+          padding:5px 5px;
 
           &:hover{
-            color:lighten(black,15%);
-            background-color:lighten(LightSeaGreen,15%);
+            color:white;
+            border-bottom: linear-gradient(to left, $hotpink 0%, $orange 100%);
+
+            span{ color:white; }
+          }
+
+          span{
+            display:table-cell;
+            vertical-align:middle;
+            font-size:0.65em;
+            color: darken(#ccc, 40%);
+
+            &:before { content: "\00a0\00a0 "; }
           }
         }
       }

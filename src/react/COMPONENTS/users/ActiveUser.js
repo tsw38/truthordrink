@@ -33,11 +33,17 @@ export default class ActiveUser extends Component{
   }
 
   render(){
+    let me = cookie.load('dHJ1dGhvcmRyaW5rdXNlcg');
+    console.log(me);
+    console.log()
     return(
       <li
         key={this.props.uuid}
         onClick={this.handleOnActiveClick}>
         {this.props.user}
+        {me.match(this.props.uuid) &&
+          <span>(me)</span>
+        }
       </li>
     );
   }

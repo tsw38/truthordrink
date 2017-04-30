@@ -25,6 +25,7 @@ export default class Login extends Component{
     const activeUser = {
       UUID: _uuid.substring(0,36),
       name: this.state.name,
+      error:false,
       private: (typeof isPrivate !== 'undefined') ? true : false
     };
 
@@ -49,23 +50,30 @@ export default class Login extends Component{
 
   handleSubmit(event){
     event.preventDefault();
-    let isPrivate = cookie.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+    if(this.state.name.trim().length){
+      let isPrivate = cookie.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
 
-    let encryptedName = btoa(this.state.name).replace(/\=/g,'');
-    let currentCookie = cookie.load('dHJ1dGhvcmRyaW5rdXNlcg');
+      let encryptedName = btoa(this.state.name).replace(/\=/g,'');
+      let currentCookie = cookie.load('dHJ1dGhvcmRyaW5rdXNlcg');
 
-    cookie.save('dHJ1dGhvcmRyaW5rdXNlcg', `${currentCookie}-${encryptedName}`)
+      cookie.save('dHJ1dGhvcmRyaW5rdXNlcg', `${currentCookie}-${encryptedName}`)
 
-    this.setState({
-      isset:true,
-      uuid: currentCookie.substring(0,36)
-    });
+      this.setState({
+        isset:true,
+        uuid: currentCookie.substring(0,36),
+        error:false
+      });
 
-    UserStore.socket.emit('add me',{
-      name: this.state.name || '',
-      UUID: currentCookie.substring(0,36),
-      private: (typeof isPrivate !== 'undefined') ? true : false
-    });
+      UserStore.socket.emit('add me',{
+        name: this.state.name || '',
+        UUID: currentCookie.substring(0,36),
+        private: (typeof isPrivate !== 'undefined') ? true : false
+      });
+    } else {
+      this.setState({
+        error:true
+      });
+    }
   }
 
   oldUser(){
@@ -80,7 +88,14 @@ export default class Login extends Component{
   }
 
   handleNameUpdate(event){
-    this.setState({name:event.target.value});
+    this.setState({
+      name:event.target.value
+    });
+    if(this.state.error){
+      this.setState({
+        error:false
+      });
+    }
   }
 
   render(){
@@ -88,20 +103,26 @@ export default class Login extends Component{
     if(isset){
       return(
         <div className="left logged-in">
-          <h2>Welcome, {this.state.name}</h2>
-          <p>Please choose a user to create a game with</p>
+          <h2>Welcome <span>{this.state.name}</span>,</h2>
+          <p>Please choose a user to drink with.</p>
         </div>
       );
     } else {
       return(
         <div className="left sign-in">
-          <h2>Enter Username</h2>
+          <h2 className={this.state.error ? "error" : ''}>Enter Username</h2>
           <form onSubmit={this.handleSubmit}>
-            <label>
-              Name:<br />
-              <input type="text" value={this.state.name} onChange={this.handleNameUpdate} />
-            </label>
-            <input type="submit" value="Submit" />
+            <input
+              type="text"
+              value={this.state.name}
+              className={this.state.error ? "error" : ''}
+              onChange={this.handleNameUpdate}
+            />
+            <input
+              type="submit"
+              className={this.state.error ? "error" : ''}
+              value="Submit"
+            />
           </form>
         </div>
       );
