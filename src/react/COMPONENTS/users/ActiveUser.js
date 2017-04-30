@@ -22,28 +22,28 @@ export default class ActiveUser extends Component{
           UserStore.socket.emit('room',[_me, this.state.uuid]);
         }
         else if(typeof group !== 'undefined'){
-          console.log("you are already in a group");
+          console.error("you are already in a group");
         }
       } else {
-        console.log('you clicked on yourself');
+        console.error('you clicked on yourself');
       }
     } else {
-      console.log('you need to sign in');
+      console.error('you need to sign in');
     }
   }
 
   render(){
     let me = cookie.load('dHJ1dGhvcmRyaW5rdXNlcg');
-    console.log(me);
-    console.log()
     return(
       <li
         key={this.props.uuid}
         onClick={this.handleOnActiveClick}>
-        {this.props.user}
-        {me.match(this.props.uuid) &&
-          <span>(me)</span>
-        }
+        <span className="wrapper">
+          {this.props.user}
+          {me.match(this.props.uuid) &&
+            <span>(you)</span>
+          }
+        </span>
       </li>
     );
   }

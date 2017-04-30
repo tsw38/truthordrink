@@ -13,7 +13,7 @@ class App extends Component{
     return(
       <Router>
         <div>
-          <Route exact path="/" component={Home} />
+          <Route exact path="/" component={Home} handler={()=>{console.log("hello world")}} />
           <Route exact path="/game/:hash" component={Game} />
         </div>
       </Router>

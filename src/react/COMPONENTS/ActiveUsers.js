@@ -69,6 +69,7 @@ export default class ActiveUsers extends Component{
   render(){
     return(
       <div className="right active-users">
+        <strong>Active Users</strong>
         <ul>
           {this.generateList()}
         </ul>

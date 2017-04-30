@@ -97,7 +97,9 @@
 	        _react2.default.createElement(
 	          'div',
 	          null,
-	          _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: _Home2.default }),
+	          _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/', component: _Home2.default, handler: function handler() {
+	              console.log("hello world");
+	            } }),
 	          _react2.default.createElement(_reactRouterDom.Route, { exact: true, path: '/game/:hash', component: _Game2.default })
 	        )
 	      );
@@ -25332,6 +25334,18 @@
 
 	var _CardWrapper2 = _interopRequireDefault(_CardWrapper);
 
+	var _Login = __webpack_require__(227);
+
+	var _Login2 = _interopRequireDefault(_Login);
+
+	var _ActiveUsers = __webpack_require__(233);
+
+	var _ActiveUsers2 = _interopRequireDefault(_ActiveUsers);
+
+	var _reactCookie = __webpack_require__(228);
+
+	var _reactCookie2 = _interopRequireDefault(_reactCookie);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -25352,11 +25366,26 @@
 	  _createClass(Home, [{
 	    key: 'render',
 	    value: function render() {
+	      var gameCookie = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+
+	      if (gameCookie.length) {
+	        window.location = '/game/' + gameCookie;
+	      }
+
 	      return _react2.default.createElement(
 	        'div',
-	        { className: 'content-wrapper' },
-	        _react2.default.createElement(_MainIcon2.default, null),
-	        _react2.default.createElement(_CardWrapper2.default, { store: _TruthStore2.default })
+	        null,
+	        gameCookie.length ? _react2.default.createElement('div', null) : _react2.default.createElement(
+	          'div',
+	          { className: 'content-wrapper' },
+	          _react2.default.createElement(_MainIcon2.default, null),
+	          _react2.default.createElement(
+	            _CardWrapper2.default,
+	            { store: _TruthStore2.default },
+	            _react2.default.createElement(_Login2.default, null),
+	            _react2.default.createElement(_ActiveUsers2.default, null)
+	          )
+	        )
 	      );
 	    }
 	  }]);
@@ -28436,7 +28465,7 @@
 /* 226 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	'use strict';
+	"use strict";
 
 	Object.defineProperty(exports, "__esModule", {
 	  value: true
@@ -28448,14 +28477,6 @@
 	var _react = __webpack_require__(1);
 
 	var _react2 = _interopRequireDefault(_react);
-
-	var _Login = __webpack_require__(227);
-
-	var _Login2 = _interopRequireDefault(_Login);
-
-	var _ActiveUsers = __webpack_require__(233);
-
-	var _ActiveUsers2 = _interopRequireDefault(_ActiveUsers);
 
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -28475,13 +28496,12 @@
 	  }
 
 	  _createClass(CardWrapper, [{
-	    key: 'render',
+	    key: "render",
 	    value: function render() {
 	      return _react2.default.createElement(
-	        'div',
-	        { className: 'card-wrapper' },
-	        _react2.default.createElement(_Login2.default, null),
-	        _react2.default.createElement(_ActiveUsers2.default, null)
+	        "div",
+	        { className: "card-wrapper" },
+	        this.props.children
 	      );
 	    }
 	  }]);
@@ -30431,6 +30451,11 @@
 	        'div',
 	        { className: 'right active-users' },
 	        _react2.default.createElement(
+	          'strong',
+	          null,
+	          'Active Users'
+	        ),
+	        _react2.default.createElement(
 	          'ul',
 	          null,
 	          this.generateList()
@@ -30504,31 +30529,33 @@
 	          if (typeof group === 'undefined') {
 	            _UserStore2.default.socket.emit('room', [_me, this.state.uuid]);
 	          } else if (typeof group !== 'undefined') {
-	            console.log("you are already in a group");
+	            console.error("you are already in a group");
 	          }
 	        } else {
-	          console.log('you clicked on yourself');
+	          console.error('you clicked on yourself');
 	        }
 	      } else {
-	        console.log('you need to sign in');
+	        console.error('you need to sign in');
 	      }
 	    }
 	  }, {
 	    key: 'render',
 	    value: function render() {
 	      var me = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg');
-	      console.log(me);
-	      console.log();
 	      return _react2.default.createElement(
 	        'li',
 	        {
 	          key: this.props.uuid,
 	          onClick: this.handleOnActiveClick },
-	        this.props.user,
-	        me.match(this.props.uuid) && _react2.default.createElement(
+	        _react2.default.createElement(
 	          'span',
-	          null,
-	          '(me)'
+	          { className: 'wrapper' },
+	          this.props.user,
+	          me.match(this.props.uuid) && _react2.default.createElement(
+	            'span',
+	            null,
+	            '(you)'
+	          )
 	        )
 	      );
 	    }
@@ -30560,6 +30587,10 @@
 
 	var _MainIcon2 = _interopRequireDefault(_MainIcon);
 
+	var _TruthStore = __webpack_require__(224);
+
+	var _TruthStore2 = _interopRequireDefault(_TruthStore);
+
 	var _CardWrapper = __webpack_require__(226);
 
 	var _CardWrapper2 = _interopRequireDefault(_CardWrapper);
@@ -30571,8 +30602,6 @@
 	function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
-	// import TruthStore from '../STORES/TruthStore.js';
-
 
 	var Game = function (_Component) {
 	  _inherits(Game, _Component);
@@ -30589,7 +30618,8 @@
 	      return _react2.default.createElement(
 	        'div',
 	        { className: 'content-wrapper' },
-	        _react2.default.createElement(_MainIcon2.default, null)
+	        _react2.default.createElement(_MainIcon2.default, null),
+	        _react2.default.createElement(_CardWrapper2.default, { store: _TruthStore2.default })
 	      );
 	    }
 	  }]);

@@ -151,6 +151,7 @@ body{
       @include justify-content(center);
       @include flex-direction(column);
       @include align-items(center);
+      border-right:1px solid $orange;
 
       h2{
         text-transform:uppercase;
@@ -170,37 +171,58 @@ body{
 
     .active-users{
       width:50%;
-      background-color:darken(white,10%);
+      border-left:1px solid $orange;
+      padding:0;
+
+      strong{
+        display:block;
+        text-transform:uppercase;
+        text-align:center;
+        background-color:$orange;
+        color:white;
+        padding:0.4em;
+      }
 
       ul{
-
+        // padding: 20px 20px 20px;
         li{
-          display:table;
 
           text-transform: uppercase;
           font-weight: 400;
-          margin: 2% 0;
+          padding:0.25em;
           font-size: 0.65em;
           cursor:pointer;
           -webkit-user-select:none;
           user-select:none;
           color: darken(#ccc, 60%);
-          padding:5px 5px;
+          // padding:5px 5px;
+          border-bottom: 2px solid transparent;
 
-          &:hover{
-            color:white;
-            border-bottom: linear-gradient(to left, $hotpink 0%, $orange 100%);
+          &:nth-of-type(odd){
+            background-color:lighten($orange,41%);
 
-            span{ color:white; }
+            &:hover{
+              background-color:lighten($orange,32%);
+            }
+          }
+          &:nth-of-type(even){
+            background-color:lighten($orange,36%);
+
+            &:hover{
+              background-color:lighten($orange,30%);
+            }
           }
 
-          span{
-            display:table-cell;
-            vertical-align:middle;
-            font-size:0.65em;
-            color: darken(#ccc, 40%);
+          .wrapper{
+            display:table;
+            span{
+              display:table-cell;
+              vertical-align:middle;
+              font-size:0.65em;
+              color: darken(#ccc, 40%);
 
-            &:before { content: "\00a0\00a0 "; }
+              &:before { content: "\00a0\00a0 "; }
+            }
           }
         }
       }
