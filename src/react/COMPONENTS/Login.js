@@ -31,7 +31,6 @@ export default class Login extends Component{
 
     UserStore.me = _uuid.substring(0,36);
 
-
     UserStore.socket.on('connect',()=>{
       if(activeUser.UUID.length){
         UserStore.socket.emit('add me',activeUser);
@@ -39,12 +38,10 @@ export default class Login extends Component{
       }
     });
 
-    // UserStore.socket.on('user joined',(data) =>{
-    //   //TODO
-    // });
-    //
     UserStore.socket.on('user left', (user) =>{
-      UserStore.activeUsers.delete(user);
+      if(typeof user === 'string'){
+        UserStore.activeUsers.delete(user);
+      }      
     });
   }
 

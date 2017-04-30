@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import cookie from 'react-cookie';
 import UserStore from '../../STORES/UserStore';
 
-export default class ActiveUser extends Component{
+export default class User extends Component{
   constructor(props){
     super(props);
     this.state = {

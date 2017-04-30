@@ -2,8 +2,8 @@ import React, { Component } from 'react';
 import cookie from 'react-cookie';
 import { observer } from 'mobx-react';
 
-import UserStore from '../STORES/UserStore';
-import ActiveUser from './users/ActiveUser';
+import UserStore from './../../STORES/UserStore';
+import User from './User';
 
 @observer
 export default class ActiveUsers extends Component{
@@ -18,11 +18,6 @@ export default class ActiveUsers extends Component{
     let newRoom  = '';
 
     UserStore.socket.on('from server', (message)=>{
-      console.log("____________________________________")
-      console.log("____________________________________")
-      console.log(message);
-      console.log("____________________________________")
-      console.log("____________________________________")
       if('leader' in message && !isLeader.length){
         isLeader = (message.leader) ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
       }
@@ -30,16 +25,13 @@ export default class ActiveUsers extends Component{
         newRoom = message.newRoom;
       }
       if(newRoom.length && isLeader.length){
-        const val = `${message.roomsArr[0]}-${message.roomsArr[1]}-${isLeader}-${newRoom}`;
+        const val = `${message.roomsArr[0]}-${message.roomsArr[1]}-${newRoom}`;
         cookie.save('DHJ1dGhvcmRyaW5rZ3JvdXA', `${val}`);
         window.location = `game/${val}`;
       }
     });
 
     UserStore.socket.on('user joined', (message)=>{
-      console.log("||||||||||||||||||||||||||||||||||||||||||")
-      console.log(message);
-      console.log("||||||||||||||||||||||||||||||||||||||||||")
       for(var uuid in message.activeUsers){
         UserStore.activeUsers.set(uuid, {
           name:message.activeUsers[uuid].name,
@@ -55,7 +47,7 @@ export default class ActiveUsers extends Component{
     for(let key in _activeUsers){
       if(!_activeUsers[key].private){
         userList.push(
-          <ActiveUser
+          <User
             key={key}
             user={_activeUsers[key].name}
             uuid={key}

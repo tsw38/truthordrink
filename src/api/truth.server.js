@@ -5,10 +5,9 @@ import favicon from 'serve-favicon';
 import path from 'path';
 import morgan from 'morgan';
 import mysql from 'mysql';
+import gameRoutes from './routes/game';
 import dotenv from 'dotenv';
 import http from 'http';
-import getTruth from './routes/getTruth';
-import gameRoute from './routes/game';
 import uuid from 'uuid/v4';
 import randomWord from 'random-word';
 import btoa from 'btoa';
@@ -51,22 +50,16 @@ app.use((req,res,next) => {
   next();
 });
 
-// getTruth(app,mysql);
-
-
 app.use(express.static(__dirname + './../public'));
 app.use('/game/:hash', express.static(__dirname + './../public'));
 app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
-gameRoute(app,mysql,path);
 
+
+console.log("---------REGISTERING GAME ROUTES--------");
+gameRoutes(app,mysql,path);
 
 
 io.on('connect', handleSockets); //all of the handshakes
-
-
-
-
-
 
 let activeUsers = {};
 
@@ -100,12 +93,9 @@ function handlePrivateRooms(roomName,usersArr){
 
 function handleSockets(socket){
   socket.on('add me', (user)=>{
-    console.log("\n\n\n\n-------------- ADD ME --------------");
-    console.log(user);
     socket.UUID = user.UUID;
     socket.NAME = user.name;
     socket.ISPRIVATE = (typeof user.private === 'undefined') ? false : user.private;
-    console.log("-------------- ADD ME --------------\n\n\n\n");
     updateActiveUsers(user);
 
     io.sockets.emit('user joined',{activeUsers:activeUsers});
@@ -156,21 +146,20 @@ function handleSockets(socket){
   });
 
 
-  socket.on('truth-or-drink', (request)=>{
+  socket.on('game', (request)=>{
     socket.join(request.roomName);
     //TODO complete the handshake
   })
 
   socket.on('disconnect', () =>{
     console.log("\n\n\n\n-------------- CLEAN ACTIVE USER POOL --------------");
-    console.log(socket.UUID);
-    console.log(socket.NAME);
-    console.log(socket.PRIVATE);
+    // console.log(socket.UUID);
+    // console.log(socket.NAME);
+    // console.log(socket.PRIVATE);
     updateActiveUsers({
       name: '',
       UUID: socket.UUID
     });
-    console.log("-------------- CLEAN ACTIVE USER POOL --------------\n\n\n\n");
     socket.broadcast.emit('user left',socket.UUID);
 
   })
