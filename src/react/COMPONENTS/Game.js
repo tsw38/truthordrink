@@ -1,10 +1,12 @@
 import React, { Component } from 'react';
+import { observer, action } from 'mobx-react';
 import MainIcon from './MainIcon';
 import TruthStore from '../STORES/TruthStore';
 import CardWrapper from './CardWrapper';
 import cookie from 'react-cookie';
 import Question from './Question';
 
+@observer
 export default class Game extends Component{
   constructor(props){
     super(props);
@@ -24,8 +26,11 @@ export default class Game extends Component{
       leader:(leader == me) ? false : true
     })
     if(!(leader == me)){ // only the leader will request the questions
-      TruthStore.getUnansweredQuestions([group.substring(0,36),group.substring(37,73)])
+      TruthStore.getUnansweredTruths([group.substring(0,36),group.substring(37,73)])
     }
+  }
+  componentDidMount(){
+    // console.log(TruthStore.unansweredTruths);
   }
 
   render(){

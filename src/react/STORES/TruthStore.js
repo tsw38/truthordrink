@@ -1,4 +1,4 @@
-import { observable, action } from 'mobx';
+import { computed, observable, action } from 'mobx';
 import cookie from 'react-cookie';
 import axios from 'axios';
 
@@ -10,7 +10,7 @@ class TruthStore {
 
 
 
-  @action getUnansweredQuestions(playersArr){
+  @action getUnansweredTruths(playersArr){
     axios.get(`/api/get-unanswered-questions/?p1=${playersArr[0]}&p2=${playersArr[1]}`)
     .then((response)=> {
       if(response.status === 200){
@@ -18,13 +18,20 @@ class TruthStore {
           arr[elem.id-1] = elem.message;
           return arr;
         },[]);
-        TruthStore.truths = tempArr;
+        this.truths = tempArr;
       }
     })
     .catch((err) => {
       console.error(err.message);
     });
   };
+
+  @computed get unansweredTruths(){
+    return this.truths;
+  }
+
+
+
   @action getRandomNumber(min,max){
     return Math.floor(Math.random()*(max-min+1)+min);
   };

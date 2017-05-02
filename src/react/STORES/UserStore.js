@@ -1,4 +1,4 @@
-import { observable, action } from 'mobx';
+import { computed, observable, action } from 'mobx';
 import cookie from 'react-cookie';
 
 
@@ -11,6 +11,9 @@ class UserStore {
   @action
   deleteUser(uuid){
     delete this.activeUsers[uuid];
+  }
+  @computed get allActiveUsers(){
+    return this.activeUsers;
   }
 
 

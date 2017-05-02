@@ -42,7 +42,7 @@ export default class ActiveUsers extends Component{
   }
 
   generateList(){
-    let _activeUsers = UserStore.activeUsers.toJS();
+    let _activeUsers = UserStore.allActiveUsers.toJS();
     let userList = [];
     for(let key in _activeUsers){
       if(!_activeUsers[key].private){

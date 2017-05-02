@@ -25518,15 +25518,17 @@
 
 	var TruthStore = (_class = function () {
 	  _createClass(TruthStore, [{
-	    key: 'getUnansweredQuestions',
-	    value: function getUnansweredQuestions(playersArr) {
+	    key: 'getUnansweredTruths',
+	    value: function getUnansweredTruths(playersArr) {
+	      var _this = this;
+
 	      _axios2.default.get('/api/get-unanswered-questions/?p1=' + playersArr[0] + '&p2=' + playersArr[1]).then(function (response) {
 	        if (response.status === 200) {
 	          var tempArr = response.data.reduce(function (arr, elem) {
 	            arr[elem.id - 1] = elem.message;
 	            return arr;
 	          }, []);
-	          TruthStore.truths = tempArr;
+	          _this.truths = tempArr;
 	        }
 	      }).catch(function (err) {
 	        console.error(err.message);
@@ -25545,6 +25547,11 @@
 	        console.log(TruthStore.truths[randomIndex]);
 	        TruthStore.currentTruth = TruthStore.truths[randomIndex];
 	      }
+	    }
+	  }, {
+	    key: 'unansweredTruths',
+	    get: function get() {
+	      return this.truths;
 	    }
 	  }]);
 
@@ -25588,7 +25595,7 @@
 	  initializer: function initializer() {
 	    return [false, false];
 	  }
-	}), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredQuestions'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype)), _class);
+	}), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'unansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'unansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype)), _class);
 
 
 	var truthStore = window.truthStore = new TruthStore();
@@ -32745,6 +32752,11 @@
 	    value: function deleteUser(uuid) {
 	      delete this.activeUsers[uuid];
 	    }
+	  }, {
+	    key: 'allActiveUsers',
+	    get: function get() {
+	      return this.activeUsers;
+	    }
 	  }]);
 
 	  function UserStore() {
@@ -32787,7 +32799,7 @@
 	  initializer: function initializer() {
 	    return io.connect('//' + window.location.hostname + ':6357');
 	  }
-	}), _applyDecoratedDescriptor(_class.prototype, 'deleteUser', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'deleteUser'), _class.prototype)), _class);
+	}), _applyDecoratedDescriptor(_class.prototype, 'deleteUser', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'deleteUser'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'allActiveUsers', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'allActiveUsers'), _class.prototype)), _class);
 
 
 	var userStore = window.userStore = new UserStore();
@@ -33990,7 +34002,7 @@
 	  }, {
 	    key: 'generateList',
 	    value: function generateList() {
-	      var _activeUsers = _UserStore2.default.activeUsers.toJS();
+	      var _activeUsers = _UserStore2.default.allActiveUsers.toJS();
 	      var userList = [];
 	      for (var key in _activeUsers) {
 	        if (!_activeUsers[key].private) {
@@ -34138,9 +34150,13 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
+	var _class;
+
 	var _react = __webpack_require__(1);
 
 	var _react2 = _interopRequireDefault(_react);
+
+	var _mobxReact = __webpack_require__(261);
 
 	var _MainIcon = __webpack_require__(223);
 
@@ -34170,7 +34186,7 @@
 
 	function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-	var Game = function (_Component) {
+	var Game = (0, _mobxReact.observer)(_class = function (_Component) {
 	  _inherits(Game, _Component);
 
 	  function Game(props) {
@@ -34197,8 +34213,13 @@
 	      });
 	      if (!(leader == me)) {
 	        // only the leader will request the questions
-	        _TruthStore2.default.getUnansweredQuestions([group.substring(0, 36), group.substring(37, 73)]);
+	        _TruthStore2.default.getUnansweredTruths([group.substring(0, 36), group.substring(37, 73)]);
 	      }
+	    }
+	  }, {
+	    key: 'componentDidMount',
+	    value: function componentDidMount() {
+	      // console.log(TruthStore.unansweredTruths);
 	    }
 	  }, {
 	    key: 'render',
@@ -34217,7 +34238,7 @@
 	  }]);
 
 	  return Game;
-	}(_react.Component);
+	}(_react.Component)) || _class;
 
 	exports.default = Game;
 	;
@@ -34247,8 +34268,6 @@
 
 	var _TruthStore2 = _interopRequireDefault(_TruthStore);
 
-	var _mobx = __webpack_require__(225);
-
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -34269,10 +34288,9 @@
 	  _createClass(Question, [{
 	    key: 'render',
 	    value: function render() {
-	      _TruthStore2.default.generateQuestions();
-	      var currentQuestion = _TruthStore2.default.currentTruth;
+	      // let currentQuestion = TruthStore.currentTruth;
 	      console.log("______________RENDER");
-
+	      console.log(_TruthStore2.default.unansweredTruths.peek());
 	      console.log("______________RENDER\n\n\n");
 	      return _react2.default.createElement(
 	        'div',
