@@ -29,7 +29,7 @@ export default class Login extends Component{
       private: (typeof isPrivate !== 'undefined') ? true : false
     };
 
-    UserStore.me = _uuid.substring(0,36);
+    UserStore.setWhoIAm(_uuid.substring(0,36));
 
     UserStore.socket.on('connect',()=>{
       if(activeUser.UUID.length){
@@ -41,7 +41,7 @@ export default class Login extends Component{
     UserStore.socket.on('user left', (user) =>{
       if(typeof user === 'string'){
         UserStore.activeUsers.delete(user);
-      }      
+      }
     });
   }
 

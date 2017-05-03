@@ -3,6 +3,7 @@ import cookie from 'react-cookie';
 import { observer } from 'mobx-react';
 
 import UserStore from './../../STORES/UserStore';
+import TruthStore from './../../STORES/TruthStore';
 import User from './User';
 
 @observer
@@ -10,24 +11,28 @@ export default class ActiveUsers extends Component{
   constructor(props){
     super(props);
     this.generateList = this.generateList.bind(this);
+    this.gameInProgress = this.gameInProgress.bind(this);
+    this.isChatroomAndUserSet = this.isChatroomAndUserSet.bind(this);
   }
 
   componentDidMount(){
     let hasGroup = cookie.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
-    let isLeader = '';
-    let newRoom  = '';
 
     UserStore.socket.on('from server', (message)=>{
-      if('leader' in message && !isLeader.length){
-        isLeader = (message.leader) ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
+      if('leader' in message){
+        console.log('leader is',message);
+        const isLeader = (message.leader) ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
+        UserStore.setLeader(isLeader);
       }
-      if('newRoom' in message && !newRoom.length){
-        newRoom = message.newRoom;
+      if('newRoom' in message){
+        const newRoom = message.newRoom;
+        TruthStore.setChatroom(newRoom);
       }
-      if(newRoom.length && isLeader.length){
-        const val = `${message.roomsArr[0]}-${message.roomsArr[1]}-${newRoom}`;
+
+      if(this.isChatroomAndUserSet(message)){
+        const val = `${message.roomsArr[0]}-${message.roomsArr[1]}-${TruthStore.getChatroom}`;
         cookie.save('DHJ1dGhvcmRyaW5rZ3JvdXA', `${val}`);
-        window.location = `game/${val}`;
+        window.location = `game/${TruthStore.getChatroom}`;
       }
     });
 
@@ -39,6 +44,25 @@ export default class ActiveUsers extends Component{
         });
       }
     });
+
+    this.gameInProgress();
+  };
+
+  isChatroomAndUserSet(message){
+    return(
+      typeof truthStore.getChatroom !== 'undefined' &&
+      typeof userStore.getLeader !== 'undefined' &&
+      typeof message.roomsArr !== 'undefined'
+    );
+  }
+
+  gameInProgress(){
+    if(UserStore.getLeader.length){
+      console.log("THIS IS DEFINED");
+    } else {
+      return;
+      console.log("THIS IS NOT DEFINED");
+    }
   }
 
   generateList(){

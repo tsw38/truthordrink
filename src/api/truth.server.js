@@ -112,7 +112,7 @@ function handleSockets(socket){
         var newRoom = btoa(randomWord()).replace(/\=/g,'');
 
         io.sockets.in(roomsArr[0]).emit('from server',{
-          leader:true,
+          leader:false,
           newRoom,
           roomsArr
         });
@@ -148,6 +148,7 @@ function handleSockets(socket){
 
   socket.on('game', (request)=>{
     socket.join(request.roomName);
+    //TODO ONLY ALLOW CHATROOM MESSAGES FROM THOSE IN CHATROOM
     //TODO complete the handshake
   })
 
@@ -164,12 +165,12 @@ function handleSockets(socket){
 
   })
 
-  socket.on('private group initialize', (group)=>{
-    // io.sockets.emit('user left',group);
-
-    updateActiveUsers({username:'',UUID:group.p1.uuid});
-    updateActiveUsers({username:'',UUID:group.p2.uuid});
-  });
+  // socket.on('private group initialize', (group)=>{
+  //   // io.sockets.emit('user left',group);
+  //
+  //   updateActiveUsers({username:'',UUID:group.p1.uuid});
+  //   updateActiveUsers({username:'',UUID:group.p2.uuid});
+  // });
 
 
 

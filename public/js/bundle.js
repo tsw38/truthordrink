@@ -25364,7 +25364,13 @@
 	      var gameCookie = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
 
 	      if (typeof gameCookie !== 'undefined') {
+	        gameCookie = gameCookie.split(/\-/g);
+	        gameCookie = gameCookie[gameCookie.length - 1];
 	        window.location = '/game/' + gameCookie;
+	      } else {
+	        if (window.location.pathname !== "/") {
+	          window.location = '/';
+	        }
 	      }
 
 	      return _react2.default.createElement(
@@ -25457,7 +25463,7 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4;
+	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5;
 
 	var _mobx = __webpack_require__(225);
 
@@ -25518,8 +25524,18 @@
 
 	var TruthStore = (_class = function () {
 	  _createClass(TruthStore, [{
-	    key: 'getUnansweredTruths',
-	    value: function getUnansweredTruths(playersArr) {
+	    key: 'getRandomNumber',
+	    value: function getRandomNumber(min, max) {
+	      return Math.floor(Math.random() * (max - min + 1) + min);
+	    }
+	  }, {
+	    key: 'setChatroom',
+	    value: function setChatroom(roomName) {
+	      this.chatroom = roomName;
+	    }
+	  }, {
+	    key: 'setUnansweredTruths',
+	    value: function setUnansweredTruths(playersArr) {
 	      var _this = this;
 
 	      _axios2.default.get('/api/get-unanswered-questions/?p1=' + playersArr[0] + '&p2=' + playersArr[1]).then(function (response) {
@@ -25535,23 +25551,28 @@
 	      });
 	    }
 	  }, {
-	    key: 'getRandomNumber',
-	    value: function getRandomNumber(min, max) {
-	      return Math.floor(Math.random() * (max - min + 1) + min);
+	    key: 'getChatroom',
+	    get: function get() {
+	      return this.chatroom;
+	    }
+	  }, {
+	    key: 'getUnansweredTruths',
+	    get: function get() {
+	      return this.truths;
 	    }
 	  }, {
 	    key: 'generateQuestions',
-	    value: function generateQuestions() {
-	      if (typeof TruthStore.truths !== 'undefined') {
-	        var randomIndex = this.getRandomNumber(0, TruthStore.truths.length - 1);
-	        console.log(TruthStore.truths[randomIndex]);
-	        TruthStore.currentTruth = TruthStore.truths[randomIndex];
-	      }
-	    }
-	  }, {
-	    key: 'unansweredTruths',
 	    get: function get() {
-	      return this.truths;
+	      //Step 1: Check URL to see if both players have answered
+	      //        If No variables || Yes: generate Question
+	      //            Emit to chatroom, the question ID and question
+	      //Step 2: If Not both responded, do nothing
+	      //Step 3: update both users URLs with game state,
+	      if (typeof this.truths !== 'undefined') {
+	        var randomIndex = this.getRandomNumber(0, this.truths.length - 1);
+	        console.log(this.truths[randomIndex]);
+	        this.currentTruth = this.truths[randomIndex];
+	      }
 	    }
 	  }]);
 
@@ -25560,17 +25581,19 @@
 
 	    _initDefineProp(this, 'truths', _descriptor, this);
 
-	    _initDefineProp(this, 'socket', _descriptor2, this);
+	    _initDefineProp(this, 'chatroom', _descriptor2, this);
 
-	    _initDefineProp(this, 'currentTruth', _descriptor3, this);
+	    _initDefineProp(this, 'socket', _descriptor3, this);
 
-	    _initDefineProp(this, 'questionProgress', _descriptor4, this);
+	    _initDefineProp(this, 'currentTruth', _descriptor4, this);
+
+	    _initDefineProp(this, 'questionProgress', _descriptor5, this);
 
 	    this.truths = this.truths;
 	    this.socket = this.socket;
+	    this.chatroom = this.chatroom;
 	    this.currentTruth = this.currentTruth;
 	    this.questionProgress = this.questionProgress;
-
 	    this.getRandomNumber = this.getRandomNumber.bind(this);
 	  }
 
@@ -25580,22 +25603,27 @@
 	  initializer: function initializer() {
 	    return [];
 	  }
-	}), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
+	}), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, 'chatroom', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return '';
+	  }
+	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return io.connect('//' + window.location.hostname + ':6357');
 	  }
-	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'currentTruth', [_mobx.observable], {
+	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'currentTruth', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return null;
 	  }
-	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'questionProgress', [_mobx.observable], {
+	}), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, 'questionProgress', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return [false, false];
 	  }
-	}), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'unansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'unansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype)), _class);
+	}), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setChatroom', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getChatroom', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype)), _class);
 
 
 	var truthStore = window.truthStore = new TruthStore();
@@ -32551,7 +32579,7 @@
 	        private: typeof isPrivate !== 'undefined' ? true : false
 	      };
 
-	      _UserStore2.default.me = _uuid.substring(0, 36);
+	      _UserStore2.default.setWhoIAm(_uuid.substring(0, 36));
 
 	      _UserStore2.default.socket.on('connect', function () {
 	        if (activeUser.UUID.length) {
@@ -32691,7 +32719,7 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4;
+	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6;
 
 	var _mobx = __webpack_require__(225);
 
@@ -32751,11 +32779,42 @@
 	    key: 'deleteUser',
 	    value: function deleteUser(uuid) {
 	      delete this.activeUsers[uuid];
+	    } // index 0: leader; index 1: player 2
+
+	  }, {
+	    key: 'setWhoIAm',
+	    value: function setWhoIAm(me) {
+	      this.me = me;
+	    }
+	  }, {
+	    key: 'setLeader',
+	    value: function setLeader(status) {
+	      this.isLeader = status;
+	    }
+	  }, {
+	    key: 'setGamePlayers',
+	    value: function setGamePlayers(arr) {
+	      this.players = arr;
 	    }
 	  }, {
 	    key: 'allActiveUsers',
 	    get: function get() {
 	      return this.activeUsers;
+	    }
+	  }, {
+	    key: 'whoAmI',
+	    get: function get() {
+	      return this.me;
+	    }
+	  }, {
+	    key: 'getLeader',
+	    get: function get() {
+	      return this.isLeader;
+	    }
+	  }, {
+	    key: 'getGamePlayers',
+	    get: function get() {
+	      return this.players;
 	    }
 	  }]);
 
@@ -32764,18 +32823,21 @@
 
 	    _initDefineProp(this, 'activeUsers', _descriptor, this);
 
-	    _initDefineProp(this, 'me', _descriptor2, this);
+	    _initDefineProp(this, 'isLeader', _descriptor2, this);
 
-	    _initDefineProp(this, 'leader', _descriptor3, this);
+	    _initDefineProp(this, 'players', _descriptor3, this);
 
-	    _initDefineProp(this, 'socket', _descriptor4, this);
+	    _initDefineProp(this, 'me', _descriptor4, this);
+
+	    _initDefineProp(this, 'leader', _descriptor5, this);
+
+	    _initDefineProp(this, 'socket', _descriptor6, this);
 
 	    this.activeUsers = this.activeUsers;
 	    this.socket = this.socket;
 	    this.me = this.me;
 	    this.leader = this.leader;
-
-	    this.deleteUser = this.deleteUser.bind(this);
+	    this.players = this.players;
 	  }
 
 	  return UserStore;
@@ -32784,22 +32846,32 @@
 	  initializer: function initializer() {
 	    return _mobx.observable.map();
 	  }
-	}), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, 'me', [_mobx.observable], {
+	}), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, 'isLeader', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return '';
 	  }
-	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'leader', [_mobx.observable], {
+	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'players', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return [];
+	  }
+	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'me', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return '';
 	  }
-	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
+	}), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, 'leader', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return '';
+	  }
+	}), _descriptor6 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return io.connect('//' + window.location.hostname + ':6357');
 	  }
-	}), _applyDecoratedDescriptor(_class.prototype, 'deleteUser', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'deleteUser'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'allActiveUsers', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'allActiveUsers'), _class.prototype)), _class);
+	}), _applyDecoratedDescriptor(_class.prototype, 'deleteUser', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'deleteUser'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'allActiveUsers', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'allActiveUsers'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setWhoIAm', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setWhoIAm'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'whoAmI', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'whoAmI'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setLeader', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setLeader'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getLeader', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getLeader'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGamePlayers', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGamePlayers'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getGamePlayers', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getGamePlayers'), _class.prototype)), _class);
 
 
 	var userStore = window.userStore = new UserStore();
@@ -33945,6 +34017,10 @@
 
 	var _UserStore2 = _interopRequireDefault(_UserStore);
 
+	var _TruthStore = __webpack_require__(224);
+
+	var _TruthStore2 = _interopRequireDefault(_TruthStore);
+
 	var _User = __webpack_require__(263);
 
 	var _User2 = _interopRequireDefault(_User);
@@ -33966,27 +34042,33 @@
 	    var _this = _possibleConstructorReturn(this, (ActiveUsers.__proto__ || Object.getPrototypeOf(ActiveUsers)).call(this, props));
 
 	    _this.generateList = _this.generateList.bind(_this);
+	    _this.gameInProgress = _this.gameInProgress.bind(_this);
+	    _this.isChatroomAndUserSet = _this.isChatroomAndUserSet.bind(_this);
 	    return _this;
 	  }
 
 	  _createClass(ActiveUsers, [{
 	    key: 'componentDidMount',
 	    value: function componentDidMount() {
+	      var _this2 = this;
+
 	      var hasGroup = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
-	      var isLeader = '';
-	      var newRoom = '';
 
 	      _UserStore2.default.socket.on('from server', function (message) {
-	        if ('leader' in message && !isLeader.length) {
-	          isLeader = message.leader ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
+	        if ('leader' in message) {
+	          console.log('leader is', message);
+	          var isLeader = message.leader ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
+	          _UserStore2.default.setLeader(isLeader);
 	        }
-	        if ('newRoom' in message && !newRoom.length) {
-	          newRoom = message.newRoom;
+	        if ('newRoom' in message) {
+	          var newRoom = message.newRoom;
+	          _TruthStore2.default.setChatroom(newRoom);
 	        }
-	        if (newRoom.length && isLeader.length) {
-	          var val = message.roomsArr[0] + '-' + message.roomsArr[1] + '-' + newRoom;
+
+	        if (_this2.isChatroomAndUserSet(message)) {
+	          var val = message.roomsArr[0] + '-' + message.roomsArr[1] + '-' + _TruthStore2.default.getChatroom;
 	          _reactCookie2.default.save('DHJ1dGhvcmRyaW5rZ3JvdXA', '' + val);
-	          window.location = 'game/' + val;
+	          window.location = 'game/' + _TruthStore2.default.getChatroom;
 	        }
 	      });
 
@@ -33998,6 +34080,23 @@
 	          });
 	        }
 	      });
+
+	      this.gameInProgress();
+	    }
+	  }, {
+	    key: 'isChatroomAndUserSet',
+	    value: function isChatroomAndUserSet(message) {
+	      return typeof truthStore.getChatroom !== 'undefined' && typeof userStore.getLeader !== 'undefined' && typeof message.roomsArr !== 'undefined';
+	    }
+	  }, {
+	    key: 'gameInProgress',
+	    value: function gameInProgress() {
+	      if (_UserStore2.default.getLeader.length) {
+	        console.log("THIS IS DEFINED");
+	      } else {
+	        return;
+	        console.log("THIS IS NOT DEFINED");
+	      }
 	    }
 	  }, {
 	    key: 'generateList',
@@ -34166,6 +34265,10 @@
 
 	var _TruthStore2 = _interopRequireDefault(_TruthStore);
 
+	var _UserStore = __webpack_require__(260);
+
+	var _UserStore2 = _interopRequireDefault(_UserStore);
+
 	var _CardWrapper = __webpack_require__(258);
 
 	var _CardWrapper2 = _interopRequireDefault(_CardWrapper);
@@ -34194,32 +34297,49 @@
 
 	    var _this = _possibleConstructorReturn(this, (Game.__proto__ || Object.getPrototypeOf(Game)).call(this, props));
 
-	    _this.state = {
-	      leader: '',
-	      chatroom: ''
-	    };
-
+	    _this.incorrectURLQuery = _this.incorrectURLQuery.bind(_this);
 	    return _this;
 	  }
 
 	  _createClass(Game, [{
 	    key: 'componentWillMount',
 	    value: function componentWillMount() {
-	      var group = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
-	      var me = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg').substring(0, 36);
-	      var leader = group.substring(0, 36);
-	      this.setState({
-	        leader: leader == me ? false : true
+	      this.incorrectURLQuery(function () {
+	        var group = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+	        var me = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg').substring(0, 36);
+	        var isLeader = group.substring(0, 36);
+	        _UserStore2.default.setLeader(!(isLeader == me));
+	        _UserStore2.default.setWhoIAm(me);
+
+	        if (!(isLeader == me)) {
+	          console.log('I am the leader');
+	          _UserStore2.default.setGamePlayers([isLeader, me]);
+	        } else {
+	          console.log('I am not the leader');
+	          _UserStore2.default.setGamePlayers([me, group.substring(37, 73)]);
+	        }
 	      });
-	      if (!(leader == me)) {
-	        // only the leader will request the questions
-	        _TruthStore2.default.getUnansweredTruths([group.substring(0, 36), group.substring(37, 73)]);
-	      }
 	    }
 	  }, {
 	    key: 'componentDidMount',
 	    value: function componentDidMount() {
-	      // console.log(TruthStore.unansweredTruths);
+	      if (_UserStore2.default.getLeader) {} // only the leader will request the questions
+	      // TruthStore.setUnansweredTruths([group.substring(0,36),group.substring(37,73)])
+
+	      // if(!(this.state.leader == me)){ // only the leader will request the questions
+	      //
+	      //   // TruthStore.getUnansweredTruths()
+	      // }
+	    }
+	  }, {
+	    key: 'incorrectURLQuery',
+	    value: function incorrectURLQuery(cb) {
+	      var group = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+	      if (typeof group === 'undefined' && window.location.pathname !== "/") {
+	        window.location = "/";
+	        return;
+	      }
+	      cb();
 	    }
 	  }, {
 	    key: 'render',
@@ -34288,10 +34408,9 @@
 	  _createClass(Question, [{
 	    key: 'render',
 	    value: function render() {
-	      // let currentQuestion = TruthStore.currentTruth;
-	      console.log("______________RENDER");
-	      console.log(_TruthStore2.default.unansweredTruths.peek());
-	      console.log("______________RENDER\n\n\n");
+	      // console.log("______________RENDER")
+	      // console.log(TruthStore.unansweredTruths.peek());
+	      // console.log("______________RENDER\n\n\n")
 	      return _react2.default.createElement(
 	        'div',
 	        { className: 'question-wrapper' },

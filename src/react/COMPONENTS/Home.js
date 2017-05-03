@@ -11,7 +11,13 @@ export default class Home extends Component{
     let gameCookie = cookie.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
 
     if(typeof gameCookie !== 'undefined'){
-      window.location = `/game/${gameCookie}`
+      gameCookie = gameCookie.split(/\-/g);
+      gameCookie = gameCookie[gameCookie.length - 1];
+      window.location = `/game/${gameCookie}`;
+    } else {
+      if(window.location.pathname !== "/"){
+        window.location = `/`;
+      }
     }
 
     return(
