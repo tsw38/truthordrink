@@ -4,6 +4,7 @@ import cookie from 'react-cookie';
 import axios from 'axios';
 
 class TruthStore {
+  @observable tempStore = '';
   @observable truths = [];
   @observable chatroom = '';
   @observable gameStarted = false;
@@ -12,7 +13,7 @@ class TruthStore {
   @observable questionProgress = [false,false];
 
 
-
+  @computed get getTempStore(){ return this.tempStore; }
   @action getRandomNumber(min,max){ return Math.floor(Math.random()*(max-min+1)+min); };
 
   @action setChatroom(roomName){ this.chatroom = roomName; }
@@ -55,7 +56,7 @@ class TruthStore {
 
   @action startGame(players){
     this.gameStarted = true;
-    if(!this.searchSearchQuery("c3RhcnR1ZA","dHJ1ZQ")){
+    if(!this.searchSearchQuery("c3RhcnR1ZA","dHJ1ZQ",false)){
       console.log("starting game");
       this.addToSearchQuery("c3RhcnR1ZA","dHJ1ZQ");
     } else {
@@ -72,9 +73,12 @@ class TruthStore {
 
   @action setGameState(){
 
-    if(this.searchSearchQuery('qid',"[0-9].+")){
+    if(this.searchSearchQuery('qid',"[0-9].+",true)){
       console.log("Question ID EXISTS IN QUERY");
-      if(this.searchSearchQuery('p1',"(0|1)") && this.searchSearchQuery('p2',"(0|1)")){
+      if(!this.currentTruth){
+        this.currentTruth = this.truths[this.getTempStore];
+      }
+      if(this.searchSearchQuery('p1',"(0|1)",false) && this.searchSearchQuery('p2',"(0|1)",false)){
         console.log("GO TO NEXT QUESTION");
         //submit answers to DB
         //go on to new QUESTION
@@ -108,7 +112,7 @@ class TruthStore {
       );
     } else {
       console.log("THERE ARE QUERIES!!!");
-      if(!this.searchSearchQuery(key,value)){
+      if(!this.searchSearchQuery(key,value,false)){
         window.history.pushState(
           { path:window.location.href }, '',
           window.location.href + `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`
@@ -117,7 +121,7 @@ class TruthStore {
     }
   }
 
-  @action searchSearchQuery(key,value){
+  @action searchSearchQuery(key,value,willStoreValue){
     let query = window.location.search;
     if(query.length){
       query = query.split("?")[1].split("&");
@@ -132,7 +136,11 @@ class TruthStore {
         } else {
           let valueRegex = new RegExp(""+value);
           if(valueRegex.test(query[key])){
+            if(willStoreValue){
+              this.tempStore = query[key];
+            }
             return true;
+
           } else {
             return false;
           }
@@ -145,6 +153,7 @@ class TruthStore {
 
 
   constructor(){
+    this.tempStore = this.tempStore;
     this.truths = this.truths;
     this.socket = this.socket;
     this.chatroom = this.chatroom;

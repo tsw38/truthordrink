@@ -25463,7 +25463,7 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6;
+	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6, _descriptor7;
 
 	var _mobx = __webpack_require__(225);
 
@@ -25573,7 +25573,7 @@
 	      var _this2 = this;
 
 	      this.gameStarted = true;
-	      if (!this.searchSearchQuery("c3RhcnR1ZA", "dHJ1ZQ")) {
+	      if (!this.searchSearchQuery("c3RhcnR1ZA", "dHJ1ZQ", false)) {
 	        console.log("starting game");
 	        this.addToSearchQuery("c3RhcnR1ZA", "dHJ1ZQ");
 	      } else {
@@ -25590,10 +25590,15 @@
 	    key: 'setGameState',
 	    value: function setGameState() {
 
-	      if (this.searchSearchQuery('qid', "[0-9].+")) {
+	      if (this.searchSearchQuery('qid', "[0-9].+", true)) {
 	        console.log("Question ID EXISTS IN QUERY");
-	        if (this.searchSearchQuery('p1', "(0|1)") && this.searchSearchQuery('p2', "(0|1)")) {
+	        if (!this.currentTruth) {
+	          this.currentTruth = this.truths[this.getTempStore];
+	        }
+	        if (this.searchSearchQuery('p1', "(0|1)", false) && this.searchSearchQuery('p2', "(0|1)", false)) {
 	          console.log("GO TO NEXT QUESTION");
+	          //submit answers to DB
+	          //go on to new QUESTION
 	        } else {
 	          console.log("DONE FOR NOW, WAITING FOR PLAYERS RESPONSE");
 	        }
@@ -25604,6 +25609,17 @@
 	        this.setGameState();
 	      }
 	    }
+
+	    //TODO
+
+	  }, {
+	    key: 'updateSearchQuery',
+	    value: function updateSearchQuery(key, newValue) {}
+	    //TODO
+
+	  }, {
+	    key: 'submitQuestionResponse',
+	    value: function submitQuestionResponse(questionID, players, response) {}
 	  }, {
 	    key: 'addToSearchQuery',
 	    value: function addToSearchQuery(key, value) {
@@ -25612,14 +25628,14 @@
 	        window.history.pushState({ path: window.location.href }, '', window.location.href + ('?' + encodeURIComponent(key) + '=' + encodeURIComponent(value)));
 	      } else {
 	        console.log("THERE ARE QUERIES!!!");
-	        if (!this.searchSearchQuery(key, value)) {
+	        if (!this.searchSearchQuery(key, value, false)) {
 	          window.history.pushState({ path: window.location.href }, '', window.location.href + ('&' + encodeURIComponent(key) + '=' + encodeURIComponent(value)));
 	        }
 	      }
 	    }
 	  }, {
 	    key: 'searchSearchQuery',
-	    value: function searchSearchQuery(key, value) {
+	    value: function searchSearchQuery(key, value, willStoreValue) {
 	      var query = window.location.search;
 	      if (query.length) {
 	        query = query.split("?")[1].split("&");
@@ -25635,6 +25651,9 @@
 	          } else {
 	            var valueRegex = new RegExp("" + value);
 	            if (valueRegex.test(query[key])) {
+	              if (willStoreValue) {
+	                this.tempStore = query[key];
+	              }
 	              return true;
 	            } else {
 	              return false;
@@ -25643,6 +25662,11 @@
 	        }
 	      }
 	      return false;
+	    }
+	  }, {
+	    key: 'getTempStore',
+	    get: function get() {
+	      return this.tempStore;
 	    }
 	  }, {
 	    key: 'getChatroom',
@@ -25659,18 +25683,21 @@
 	  function TruthStore() {
 	    _classCallCheck(this, TruthStore);
 
-	    _initDefineProp(this, 'truths', _descriptor, this);
+	    _initDefineProp(this, 'tempStore', _descriptor, this);
 
-	    _initDefineProp(this, 'chatroom', _descriptor2, this);
+	    _initDefineProp(this, 'truths', _descriptor2, this);
 
-	    _initDefineProp(this, 'gameStarted', _descriptor3, this);
+	    _initDefineProp(this, 'chatroom', _descriptor3, this);
 
-	    _initDefineProp(this, 'socket', _descriptor4, this);
+	    _initDefineProp(this, 'gameStarted', _descriptor4, this);
 
-	    _initDefineProp(this, 'currentTruth', _descriptor5, this);
+	    _initDefineProp(this, 'socket', _descriptor5, this);
 
-	    _initDefineProp(this, 'questionProgress', _descriptor6, this);
+	    _initDefineProp(this, 'currentTruth', _descriptor6, this);
 
+	    _initDefineProp(this, 'questionProgress', _descriptor7, this);
+
+	    this.tempStore = this.tempStore;
 	    this.truths = this.truths;
 	    this.socket = this.socket;
 	    this.chatroom = this.chatroom;
@@ -25680,37 +25707,42 @@
 	  }
 
 	  return TruthStore;
-	}(), (_descriptor = _applyDecoratedDescriptor(_class.prototype, 'truths', [_mobx.observable], {
-	  enumerable: true,
-	  initializer: function initializer() {
-	    return [];
-	  }
-	}), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, 'chatroom', [_mobx.observable], {
+	}(), (_descriptor = _applyDecoratedDescriptor(_class.prototype, 'tempStore', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return '';
 	  }
-	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'gameStarted', [_mobx.observable], {
+	}), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, 'truths', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return [];
+	  }
+	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'chatroom', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return '';
+	  }
+	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'gameStarted', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return false;
 	  }
-	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
+	}), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return io.connect('//' + window.location.hostname + ':6357');
 	  }
-	}), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, 'currentTruth', [_mobx.observable], {
+	}), _descriptor6 = _applyDecoratedDescriptor(_class.prototype, 'currentTruth', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return null;
 	  }
-	}), _descriptor6 = _applyDecoratedDescriptor(_class.prototype, 'questionProgress', [_mobx.observable], {
+	}), _descriptor7 = _applyDecoratedDescriptor(_class.prototype, 'questionProgress', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return [false, false];
 	  }
-	}), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setChatroom', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getChatroom', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'startGame', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'startGame'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'addToSearchQuery', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'addToSearchQuery'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'searchSearchQuery', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'searchSearchQuery'), _class.prototype)), _class);
+	}), _applyDecoratedDescriptor(_class.prototype, 'getTempStore', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getTempStore'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setChatroom', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getChatroom', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'startGame', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'startGame'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'updateSearchQuery', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'updateSearchQuery'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'submitQuestionResponse', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'submitQuestionResponse'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'addToSearchQuery', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'addToSearchQuery'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'searchSearchQuery', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'searchSearchQuery'), _class.prototype)), _class);
 
 
 	var truthStore = window.truthStore = new TruthStore();
