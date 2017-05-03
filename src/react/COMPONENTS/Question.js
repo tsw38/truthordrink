@@ -10,7 +10,7 @@ export default class Question extends Component{
 
   render(){
     // console.log("______________RENDER")
-    // console.log(TruthStore.unansweredTruths.peek());
+    // console.log(TruthStore.getUnansweredTruths.peek());
     // console.log("______________RENDER\n\n\n")
     return(
       <div className="question-wrapper">

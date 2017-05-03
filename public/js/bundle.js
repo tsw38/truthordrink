@@ -25325,11 +25325,11 @@
 
 	var _TruthStore2 = _interopRequireDefault(_TruthStore);
 
-	var _CardWrapper = __webpack_require__(258);
+	var _CardWrapper = __webpack_require__(259);
 
 	var _CardWrapper2 = _interopRequireDefault(_CardWrapper);
 
-	var _Login = __webpack_require__(259);
+	var _Login = __webpack_require__(260);
 
 	var _Login2 = _interopRequireDefault(_Login);
 
@@ -25337,7 +25337,7 @@
 
 	var _ActiveUsers2 = _interopRequireDefault(_ActiveUsers);
 
-	var _reactCookie = __webpack_require__(226);
+	var _reactCookie = __webpack_require__(227);
 
 	var _reactCookie2 = _interopRequireDefault(_reactCookie);
 
@@ -25463,15 +25463,19 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5;
+	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6;
 
 	var _mobx = __webpack_require__(225);
 
-	var _reactCookie = __webpack_require__(226);
+	var _UserStore = __webpack_require__(226);
+
+	var _UserStore2 = _interopRequireDefault(_UserStore);
+
+	var _reactCookie = __webpack_require__(227);
 
 	var _reactCookie2 = _interopRequireDefault(_reactCookie);
 
-	var _axios = __webpack_require__(229);
+	var _axios = __webpack_require__(230);
 
 	var _axios2 = _interopRequireDefault(_axios);
 
@@ -25535,7 +25539,7 @@
 	    }
 	  }, {
 	    key: 'setUnansweredTruths',
-	    value: function setUnansweredTruths(playersArr) {
+	    value: function setUnansweredTruths(playersArr, callback) {
 	      var _this = this;
 
 	      _axios2.default.get('/api/get-unanswered-questions/?p1=' + playersArr[0] + '&p2=' + playersArr[1]).then(function (response) {
@@ -25545,10 +25549,100 @@
 	            return arr;
 	          }, []);
 	          _this.truths = tempArr;
+	          callback();
 	        }
 	      }).catch(function (err) {
 	        console.error(err.message);
+	        callback(false);
 	      });
+	    }
+	  }, {
+	    key: 'generateQuestions',
+	    value: function generateQuestions() {
+	      if (typeof this.truths !== 'undefined') {
+	        var randomIndex = this.getRandomNumber(0, this.truths.length - 1);
+	        this.currentTruth = this.truths[randomIndex];
+	        this.addToSearchQuery('qid', randomIndex);
+	        this.addToSearchQuery('p1', 'ZmFsc2U');
+	        this.addToSearchQuery('p2', 'ZmFsc2U');
+	      }
+	    }
+	  }, {
+	    key: 'startGame',
+	    value: function startGame(players) {
+	      var _this2 = this;
+
+	      this.gameStarted = true;
+	      if (!this.searchSearchQuery("c3RhcnR1ZA", "dHJ1ZQ")) {
+	        console.log("starting game");
+	        this.addToSearchQuery("c3RhcnR1ZA", "dHJ1ZQ");
+	      } else {
+	        console.log("Game has started");
+	      }
+	      if (_UserStore2.default.isLeader) {
+	        this.setUnansweredTruths(players, function () {
+	          console.log('pulled all questions!');
+	          _this2.setGameState();
+	        });
+	      }
+	    }
+	  }, {
+	    key: 'setGameState',
+	    value: function setGameState() {
+
+	      if (this.searchSearchQuery('qid', "[0-9].+")) {
+	        console.log("Question ID EXISTS IN QUERY");
+	        if (this.searchSearchQuery('p1', "(0|1)") && this.searchSearchQuery('p2', "(0|1)")) {
+	          console.log("GO TO NEXT QUESTION");
+	        } else {
+	          console.log("DONE FOR NOW, WAITING FOR PLAYERS RESPONSE");
+	        }
+	      } else {
+	        console.log("NEED TO GENERATE QUESTION");
+	        this.generateQuestions();
+	        console.log("now looping back");
+	        this.setGameState();
+	      }
+	    }
+	  }, {
+	    key: 'addToSearchQuery',
+	    value: function addToSearchQuery(key, value) {
+	      if (!window.location.search.length) {
+	        console.log("THERE ARE NO QUERIES");
+	        window.history.pushState({ path: window.location.href }, '', window.location.href + ('?' + encodeURIComponent(key) + '=' + encodeURIComponent(value)));
+	      } else {
+	        console.log("THERE ARE QUERIES!!!");
+	        if (!this.searchSearchQuery(key, value)) {
+	          window.history.pushState({ path: window.location.href }, '', window.location.href + ('&' + encodeURIComponent(key) + '=' + encodeURIComponent(value)));
+	        }
+	      }
+	    }
+	  }, {
+	    key: 'searchSearchQuery',
+	    value: function searchSearchQuery(key, value) {
+	      var query = window.location.search;
+	      if (query.length) {
+	        query = query.split("?")[1].split("&");
+	        query = query.reduce(function (obj, elem) {
+	          elem = elem.split("=");
+	          obj[elem[0]] = elem[1];
+	          return obj;
+	        }, {});
+	        if (key in query) {
+	          if (typeof value === 'undefined') {
+	            //general key search
+	            return true;
+	          } else {
+	            var valueRegex = new RegExp("" + value);
+	            if (valueRegex.test(query[key])) {
+	              return true;
+	            } else {
+	              return false;
+	            }
+	          }
+	        }
+	      }
+	      return false;
 	    }
 	  }, {
 	    key: 'getChatroom',
@@ -25560,20 +25654,6 @@
 	    get: function get() {
 	      return this.truths;
 	    }
-	  }, {
-	    key: 'generateQuestions',
-	    get: function get() {
-	      //Step 1: Check URL to see if both players have answered
-	      //        If No variables || Yes: generate Question
-	      //            Emit to chatroom, the question ID and question
-	      //Step 2: If Not both responded, do nothing
-	      //Step 3: update both users URLs with game state,
-	      if (typeof this.truths !== 'undefined') {
-	        var randomIndex = this.getRandomNumber(0, this.truths.length - 1);
-	        console.log(this.truths[randomIndex]);
-	        this.currentTruth = this.truths[randomIndex];
-	      }
-	    }
 	  }]);
 
 	  function TruthStore() {
@@ -25583,11 +25663,13 @@
 
 	    _initDefineProp(this, 'chatroom', _descriptor2, this);
 
-	    _initDefineProp(this, 'socket', _descriptor3, this);
+	    _initDefineProp(this, 'gameStarted', _descriptor3, this);
 
-	    _initDefineProp(this, 'currentTruth', _descriptor4, this);
+	    _initDefineProp(this, 'socket', _descriptor4, this);
 
-	    _initDefineProp(this, 'questionProgress', _descriptor5, this);
+	    _initDefineProp(this, 'currentTruth', _descriptor5, this);
+
+	    _initDefineProp(this, 'questionProgress', _descriptor6, this);
 
 	    this.truths = this.truths;
 	    this.socket = this.socket;
@@ -25608,22 +25690,27 @@
 	  initializer: function initializer() {
 	    return '';
 	  }
-	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
+	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'gameStarted', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return false;
+	  }
+	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return io.connect('//' + window.location.hostname + ':6357');
 	  }
-	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'currentTruth', [_mobx.observable], {
+	}), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, 'currentTruth', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return null;
 	  }
-	}), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, 'questionProgress', [_mobx.observable], {
+	}), _descriptor6 = _applyDecoratedDescriptor(_class.prototype, 'questionProgress', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return [false, false];
 	  }
-	}), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setChatroom', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getChatroom', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype)), _class);
+	}), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setChatroom', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getChatroom', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'startGame', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'startGame'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'addToSearchQuery', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'addToSearchQuery'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'searchSearchQuery', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'searchSearchQuery'), _class.prototype)), _class);
 
 
 	var truthStore = window.truthStore = new TruthStore();
@@ -28568,6 +28655,176 @@
 	  value: true
 	});
 
+	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6;
+
+	var _mobx = __webpack_require__(225);
+
+	var _reactCookie = __webpack_require__(227);
+
+	var _reactCookie2 = _interopRequireDefault(_reactCookie);
+
+	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
+
+	function _initDefineProp(target, property, descriptor, context) {
+	  if (!descriptor) return;
+	  Object.defineProperty(target, property, {
+	    enumerable: descriptor.enumerable,
+	    configurable: descriptor.configurable,
+	    writable: descriptor.writable,
+	    value: descriptor.initializer ? descriptor.initializer.call(context) : void 0
+	  });
+	}
+
+	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+	function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
+	  var desc = {};
+	  Object['ke' + 'ys'](descriptor).forEach(function (key) {
+	    desc[key] = descriptor[key];
+	  });
+	  desc.enumerable = !!desc.enumerable;
+	  desc.configurable = !!desc.configurable;
+
+	  if ('value' in desc || desc.initializer) {
+	    desc.writable = true;
+	  }
+
+	  desc = decorators.slice().reverse().reduce(function (desc, decorator) {
+	    return decorator(target, property, desc) || desc;
+	  }, desc);
+
+	  if (context && desc.initializer !== void 0) {
+	    desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
+	    desc.initializer = undefined;
+	  }
+
+	  if (desc.initializer === void 0) {
+	    Object['define' + 'Property'](target, property, desc);
+	    desc = null;
+	  }
+
+	  return desc;
+	}
+
+	function _initializerWarningHelper(descriptor, context) {
+	  throw new Error('Decorating class property failed. Please ensure that transform-class-properties is enabled.');
+	}
+
+	var UserStore = (_class = function () {
+	  _createClass(UserStore, [{
+	    key: 'deleteUser',
+	    value: function deleteUser(uuid) {
+	      delete this.activeUsers[uuid];
+	    } // index 0: leader; index 1: player 2
+
+	  }, {
+	    key: 'setWhoIAm',
+	    value: function setWhoIAm(me) {
+	      this.me = me;
+	    }
+	  }, {
+	    key: 'setLeader',
+	    value: function setLeader(status) {
+	      this.isLeader = status;
+	    }
+	  }, {
+	    key: 'setGamePlayers',
+	    value: function setGamePlayers(arr) {
+	      this.players = arr;
+	    }
+	  }, {
+	    key: 'allActiveUsers',
+	    get: function get() {
+	      return this.activeUsers;
+	    }
+	  }, {
+	    key: 'whoAmI',
+	    get: function get() {
+	      return this.me;
+	    }
+	  }, {
+	    key: 'getLeader',
+	    get: function get() {
+	      return this.isLeader;
+	    }
+	  }, {
+	    key: 'getGamePlayers',
+	    get: function get() {
+	      return this.players;
+	    }
+	  }]);
+
+	  function UserStore() {
+	    _classCallCheck(this, UserStore);
+
+	    _initDefineProp(this, 'activeUsers', _descriptor, this);
+
+	    _initDefineProp(this, 'isLeader', _descriptor2, this);
+
+	    _initDefineProp(this, 'players', _descriptor3, this);
+
+	    _initDefineProp(this, 'me', _descriptor4, this);
+
+	    _initDefineProp(this, 'leader', _descriptor5, this);
+
+	    _initDefineProp(this, 'socket', _descriptor6, this);
+
+	    this.activeUsers = this.activeUsers;
+	    this.socket = this.socket;
+	    this.me = this.me;
+	    this.leader = this.leader;
+	    this.players = this.players;
+	  }
+
+	  return UserStore;
+	}(), (_descriptor = _applyDecoratedDescriptor(_class.prototype, 'activeUsers', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return _mobx.observable.map();
+	  }
+	}), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, 'isLeader', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return '';
+	  }
+	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'players', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return [];
+	  }
+	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'me', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return '';
+	  }
+	}), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, 'leader', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return '';
+	  }
+	}), _descriptor6 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return io.connect('//' + window.location.hostname + ':6357');
+	  }
+	}), _applyDecoratedDescriptor(_class.prototype, 'deleteUser', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'deleteUser'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'allActiveUsers', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'allActiveUsers'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setWhoIAm', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setWhoIAm'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'whoAmI', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'whoAmI'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setLeader', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setLeader'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getLeader', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getLeader'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGamePlayers', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGamePlayers'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getGamePlayers', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getGamePlayers'), _class.prototype)), _class);
+
+
+	var userStore = window.userStore = new UserStore();
+	exports.default = userStore;
+
+/***/ }),
+/* 227 */
+/***/ (function(module, exports, __webpack_require__) {
+
+	'use strict';
+
+	Object.defineProperty(exports, "__esModule", {
+	  value: true
+	});
+
 	var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 	var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol" ? function (obj) { return typeof obj; } : function (obj) { return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; };
@@ -28579,7 +28836,7 @@
 	exports.setRawCookie = setRawCookie;
 	exports.plugToRequest = plugToRequest;
 
-	var _cookie = __webpack_require__(227);
+	var _cookie = __webpack_require__(228);
 
 	var _cookie2 = _interopRequireDefault(_cookie);
 
@@ -28587,7 +28844,7 @@
 
 	var _objectAssign2 = _interopRequireDefault(_objectAssign);
 
-	var _isNode = __webpack_require__(228);
+	var _isNode = __webpack_require__(229);
 
 	var _isNode2 = _interopRequireDefault(_isNode);
 
@@ -28726,7 +28983,7 @@
 	};
 
 /***/ }),
-/* 227 */
+/* 228 */
 /***/ (function(module, exports) {
 
 	/*!
@@ -28927,7 +29184,7 @@
 
 
 /***/ }),
-/* 228 */
+/* 229 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {// Coding standard for this project defined @ https://github.com/MatthewSH/standards/blob/master/JavaScript.md
@@ -28938,21 +29195,21 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ }),
-/* 229 */
+/* 230 */
 /***/ (function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(230);
+	module.exports = __webpack_require__(231);
 
 /***/ }),
-/* 230 */
+/* 231 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var utils = __webpack_require__(231);
-	var bind = __webpack_require__(236);
-	var Axios = __webpack_require__(237);
-	var defaults = __webpack_require__(238);
+	var utils = __webpack_require__(232);
+	var bind = __webpack_require__(237);
+	var Axios = __webpack_require__(238);
+	var defaults = __webpack_require__(239);
 
 	/**
 	 * Create an instance of Axios
@@ -28985,15 +29242,15 @@
 	};
 
 	// Expose Cancel & CancelToken
-	axios.Cancel = __webpack_require__(255);
-	axios.CancelToken = __webpack_require__(256);
-	axios.isCancel = __webpack_require__(252);
+	axios.Cancel = __webpack_require__(256);
+	axios.CancelToken = __webpack_require__(257);
+	axios.isCancel = __webpack_require__(253);
 
 	// Expose all/spread
 	axios.all = function all(promises) {
 	  return Promise.all(promises);
 	};
-	axios.spread = __webpack_require__(257);
+	axios.spread = __webpack_require__(258);
 
 	module.exports = axios;
 
@@ -29002,12 +29259,12 @@
 
 
 /***/ }),
-/* 231 */
+/* 232 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(Buffer) {'use strict';
 
-	var bind = __webpack_require__(236);
+	var bind = __webpack_require__(237);
 
 	/*global toString:true*/
 
@@ -29318,10 +29575,10 @@
 	  trim: trim
 	};
 
-	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(232).Buffer))
+	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(233).Buffer))
 
 /***/ }),
-/* 232 */
+/* 233 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(global) {/*!
@@ -29334,9 +29591,9 @@
 
 	'use strict'
 
-	var base64 = __webpack_require__(233)
-	var ieee754 = __webpack_require__(234)
-	var isArray = __webpack_require__(235)
+	var base64 = __webpack_require__(234)
+	var ieee754 = __webpack_require__(235)
+	var isArray = __webpack_require__(236)
 
 	exports.Buffer = Buffer
 	exports.SlowBuffer = SlowBuffer
@@ -31117,7 +31374,7 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }),
-/* 233 */
+/* 234 */
 /***/ (function(module, exports) {
 
 	'use strict'
@@ -31237,7 +31494,7 @@
 
 
 /***/ }),
-/* 234 */
+/* 235 */
 /***/ (function(module, exports) {
 
 	exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -31327,7 +31584,7 @@
 
 
 /***/ }),
-/* 235 */
+/* 236 */
 /***/ (function(module, exports) {
 
 	var toString = {}.toString;
@@ -31338,7 +31595,7 @@
 
 
 /***/ }),
-/* 236 */
+/* 237 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -31355,17 +31612,17 @@
 
 
 /***/ }),
-/* 237 */
+/* 238 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var defaults = __webpack_require__(238);
-	var utils = __webpack_require__(231);
-	var InterceptorManager = __webpack_require__(249);
-	var dispatchRequest = __webpack_require__(250);
-	var isAbsoluteURL = __webpack_require__(253);
-	var combineURLs = __webpack_require__(254);
+	var defaults = __webpack_require__(239);
+	var utils = __webpack_require__(232);
+	var InterceptorManager = __webpack_require__(250);
+	var dispatchRequest = __webpack_require__(251);
+	var isAbsoluteURL = __webpack_require__(254);
+	var combineURLs = __webpack_require__(255);
 
 	/**
 	 * Create a new instance of Axios
@@ -31446,13 +31703,13 @@
 
 
 /***/ }),
-/* 238 */
+/* 239 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 
-	var utils = __webpack_require__(231);
-	var normalizeHeaderName = __webpack_require__(239);
+	var utils = __webpack_require__(232);
+	var normalizeHeaderName = __webpack_require__(240);
 
 	var DEFAULT_CONTENT_TYPE = {
 	  'Content-Type': 'application/x-www-form-urlencoded'
@@ -31468,10 +31725,10 @@
 	  var adapter;
 	  if (typeof XMLHttpRequest !== 'undefined') {
 	    // For browsers use XHR adapter
-	    adapter = __webpack_require__(240);
+	    adapter = __webpack_require__(241);
 	  } else if (typeof process !== 'undefined') {
 	    // For node use HTTP adapter
-	    adapter = __webpack_require__(240);
+	    adapter = __webpack_require__(241);
 	  }
 	  return adapter;
 	}
@@ -31545,12 +31802,12 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ }),
-/* 239 */
+/* 240 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var utils = __webpack_require__(231);
+	var utils = __webpack_require__(232);
 
 	module.exports = function normalizeHeaderName(headers, normalizedName) {
 	  utils.forEach(headers, function processHeader(value, name) {
@@ -31563,18 +31820,18 @@
 
 
 /***/ }),
-/* 240 */
+/* 241 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	/* WEBPACK VAR INJECTION */(function(process) {'use strict';
 
-	var utils = __webpack_require__(231);
-	var settle = __webpack_require__(241);
-	var buildURL = __webpack_require__(244);
-	var parseHeaders = __webpack_require__(245);
-	var isURLSameOrigin = __webpack_require__(246);
-	var createError = __webpack_require__(242);
-	var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(247);
+	var utils = __webpack_require__(232);
+	var settle = __webpack_require__(242);
+	var buildURL = __webpack_require__(245);
+	var parseHeaders = __webpack_require__(246);
+	var isURLSameOrigin = __webpack_require__(247);
+	var createError = __webpack_require__(243);
+	var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(248);
 
 	module.exports = function xhrAdapter(config) {
 	  return new Promise(function dispatchXhrRequest(resolve, reject) {
@@ -31670,7 +31927,7 @@
 	    // This is only done if running in a standard browser environment.
 	    // Specifically not if we're in a web worker, or react-native.
 	    if (utils.isStandardBrowserEnv()) {
-	      var cookies = __webpack_require__(248);
+	      var cookies = __webpack_require__(249);
 
 	      // Add xsrf header
 	      var xsrfValue = (config.withCredentials || isURLSameOrigin(config.url)) && config.xsrfCookieName ?
@@ -31749,12 +32006,12 @@
 	/* WEBPACK VAR INJECTION */}.call(exports, __webpack_require__(3)))
 
 /***/ }),
-/* 241 */
+/* 242 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var createError = __webpack_require__(242);
+	var createError = __webpack_require__(243);
 
 	/**
 	 * Resolve or reject a Promise based on response status.
@@ -31780,12 +32037,12 @@
 
 
 /***/ }),
-/* 242 */
+/* 243 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var enhanceError = __webpack_require__(243);
+	var enhanceError = __webpack_require__(244);
 
 	/**
 	 * Create an Error with the specified message, config, error code, and response.
@@ -31803,7 +32060,7 @@
 
 
 /***/ }),
-/* 243 */
+/* 244 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -31828,12 +32085,12 @@
 
 
 /***/ }),
-/* 244 */
+/* 245 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var utils = __webpack_require__(231);
+	var utils = __webpack_require__(232);
 
 	function encode(val) {
 	  return encodeURIComponent(val).
@@ -31902,12 +32159,12 @@
 
 
 /***/ }),
-/* 245 */
+/* 246 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var utils = __webpack_require__(231);
+	var utils = __webpack_require__(232);
 
 	/**
 	 * Parse headers into an object
@@ -31945,12 +32202,12 @@
 
 
 /***/ }),
-/* 246 */
+/* 247 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var utils = __webpack_require__(231);
+	var utils = __webpack_require__(232);
 
 	module.exports = (
 	  utils.isStandardBrowserEnv() ?
@@ -32019,7 +32276,7 @@
 
 
 /***/ }),
-/* 247 */
+/* 248 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -32061,12 +32318,12 @@
 
 
 /***/ }),
-/* 248 */
+/* 249 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var utils = __webpack_require__(231);
+	var utils = __webpack_require__(232);
 
 	module.exports = (
 	  utils.isStandardBrowserEnv() ?
@@ -32120,12 +32377,12 @@
 
 
 /***/ }),
-/* 249 */
+/* 250 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var utils = __webpack_require__(231);
+	var utils = __webpack_require__(232);
 
 	function InterceptorManager() {
 	  this.handlers = [];
@@ -32178,15 +32435,15 @@
 
 
 /***/ }),
-/* 250 */
+/* 251 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var utils = __webpack_require__(231);
-	var transformData = __webpack_require__(251);
-	var isCancel = __webpack_require__(252);
-	var defaults = __webpack_require__(238);
+	var utils = __webpack_require__(232);
+	var transformData = __webpack_require__(252);
+	var isCancel = __webpack_require__(253);
+	var defaults = __webpack_require__(239);
 
 	/**
 	 * Throws a `Cancel` if cancellation has been requested.
@@ -32263,12 +32520,12 @@
 
 
 /***/ }),
-/* 251 */
+/* 252 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var utils = __webpack_require__(231);
+	var utils = __webpack_require__(232);
 
 	/**
 	 * Transform the data for a request or a response
@@ -32289,7 +32546,7 @@
 
 
 /***/ }),
-/* 252 */
+/* 253 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -32300,7 +32557,7 @@
 
 
 /***/ }),
-/* 253 */
+/* 254 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -32320,7 +32577,7 @@
 
 
 /***/ }),
-/* 254 */
+/* 255 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -32340,7 +32597,7 @@
 
 
 /***/ }),
-/* 255 */
+/* 256 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -32365,12 +32622,12 @@
 
 
 /***/ }),
-/* 256 */
+/* 257 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
 
-	var Cancel = __webpack_require__(255);
+	var Cancel = __webpack_require__(256);
 
 	/**
 	 * A `CancelToken` is an object that can be used to request cancellation of an operation.
@@ -32428,7 +32685,7 @@
 
 
 /***/ }),
-/* 257 */
+/* 258 */
 /***/ (function(module, exports) {
 
 	'use strict';
@@ -32461,7 +32718,7 @@
 
 
 /***/ }),
-/* 258 */
+/* 259 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	"use strict";
@@ -32511,7 +32768,7 @@
 	exports.default = CardWrapper;
 
 /***/ }),
-/* 259 */
+/* 260 */
 /***/ (function(module, exports, __webpack_require__) {
 
 	'use strict';
@@ -32529,11 +32786,11 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactCookie = __webpack_require__(226);
+	var _reactCookie = __webpack_require__(227);
 
 	var _reactCookie2 = _interopRequireDefault(_reactCookie);
 
-	var _UserStore = __webpack_require__(260);
+	var _UserStore = __webpack_require__(226);
 
 	var _UserStore2 = _interopRequireDefault(_UserStore);
 
@@ -32706,176 +32963,6 @@
 	}(_react.Component)) || _class;
 
 	exports.default = Login;
-
-/***/ }),
-/* 260 */
-/***/ (function(module, exports, __webpack_require__) {
-
-	'use strict';
-
-	Object.defineProperty(exports, "__esModule", {
-	  value: true
-	});
-
-	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
-
-	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6;
-
-	var _mobx = __webpack_require__(225);
-
-	var _reactCookie = __webpack_require__(226);
-
-	var _reactCookie2 = _interopRequireDefault(_reactCookie);
-
-	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
-
-	function _initDefineProp(target, property, descriptor, context) {
-	  if (!descriptor) return;
-	  Object.defineProperty(target, property, {
-	    enumerable: descriptor.enumerable,
-	    configurable: descriptor.configurable,
-	    writable: descriptor.writable,
-	    value: descriptor.initializer ? descriptor.initializer.call(context) : void 0
-	  });
-	}
-
-	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-	function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
-	  var desc = {};
-	  Object['ke' + 'ys'](descriptor).forEach(function (key) {
-	    desc[key] = descriptor[key];
-	  });
-	  desc.enumerable = !!desc.enumerable;
-	  desc.configurable = !!desc.configurable;
-
-	  if ('value' in desc || desc.initializer) {
-	    desc.writable = true;
-	  }
-
-	  desc = decorators.slice().reverse().reduce(function (desc, decorator) {
-	    return decorator(target, property, desc) || desc;
-	  }, desc);
-
-	  if (context && desc.initializer !== void 0) {
-	    desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
-	    desc.initializer = undefined;
-	  }
-
-	  if (desc.initializer === void 0) {
-	    Object['define' + 'Property'](target, property, desc);
-	    desc = null;
-	  }
-
-	  return desc;
-	}
-
-	function _initializerWarningHelper(descriptor, context) {
-	  throw new Error('Decorating class property failed. Please ensure that transform-class-properties is enabled.');
-	}
-
-	var UserStore = (_class = function () {
-	  _createClass(UserStore, [{
-	    key: 'deleteUser',
-	    value: function deleteUser(uuid) {
-	      delete this.activeUsers[uuid];
-	    } // index 0: leader; index 1: player 2
-
-	  }, {
-	    key: 'setWhoIAm',
-	    value: function setWhoIAm(me) {
-	      this.me = me;
-	    }
-	  }, {
-	    key: 'setLeader',
-	    value: function setLeader(status) {
-	      this.isLeader = status;
-	    }
-	  }, {
-	    key: 'setGamePlayers',
-	    value: function setGamePlayers(arr) {
-	      this.players = arr;
-	    }
-	  }, {
-	    key: 'allActiveUsers',
-	    get: function get() {
-	      return this.activeUsers;
-	    }
-	  }, {
-	    key: 'whoAmI',
-	    get: function get() {
-	      return this.me;
-	    }
-	  }, {
-	    key: 'getLeader',
-	    get: function get() {
-	      return this.isLeader;
-	    }
-	  }, {
-	    key: 'getGamePlayers',
-	    get: function get() {
-	      return this.players;
-	    }
-	  }]);
-
-	  function UserStore() {
-	    _classCallCheck(this, UserStore);
-
-	    _initDefineProp(this, 'activeUsers', _descriptor, this);
-
-	    _initDefineProp(this, 'isLeader', _descriptor2, this);
-
-	    _initDefineProp(this, 'players', _descriptor3, this);
-
-	    _initDefineProp(this, 'me', _descriptor4, this);
-
-	    _initDefineProp(this, 'leader', _descriptor5, this);
-
-	    _initDefineProp(this, 'socket', _descriptor6, this);
-
-	    this.activeUsers = this.activeUsers;
-	    this.socket = this.socket;
-	    this.me = this.me;
-	    this.leader = this.leader;
-	    this.players = this.players;
-	  }
-
-	  return UserStore;
-	}(), (_descriptor = _applyDecoratedDescriptor(_class.prototype, 'activeUsers', [_mobx.observable], {
-	  enumerable: true,
-	  initializer: function initializer() {
-	    return _mobx.observable.map();
-	  }
-	}), _descriptor2 = _applyDecoratedDescriptor(_class.prototype, 'isLeader', [_mobx.observable], {
-	  enumerable: true,
-	  initializer: function initializer() {
-	    return '';
-	  }
-	}), _descriptor3 = _applyDecoratedDescriptor(_class.prototype, 'players', [_mobx.observable], {
-	  enumerable: true,
-	  initializer: function initializer() {
-	    return [];
-	  }
-	}), _descriptor4 = _applyDecoratedDescriptor(_class.prototype, 'me', [_mobx.observable], {
-	  enumerable: true,
-	  initializer: function initializer() {
-	    return '';
-	  }
-	}), _descriptor5 = _applyDecoratedDescriptor(_class.prototype, 'leader', [_mobx.observable], {
-	  enumerable: true,
-	  initializer: function initializer() {
-	    return '';
-	  }
-	}), _descriptor6 = _applyDecoratedDescriptor(_class.prototype, 'socket', [_mobx.observable], {
-	  enumerable: true,
-	  initializer: function initializer() {
-	    return io.connect('//' + window.location.hostname + ':6357');
-	  }
-	}), _applyDecoratedDescriptor(_class.prototype, 'deleteUser', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'deleteUser'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'allActiveUsers', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'allActiveUsers'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setWhoIAm', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setWhoIAm'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'whoAmI', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'whoAmI'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setLeader', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setLeader'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getLeader', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getLeader'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGamePlayers', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGamePlayers'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getGamePlayers', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getGamePlayers'), _class.prototype)), _class);
-
-
-	var userStore = window.userStore = new UserStore();
-	exports.default = userStore;
 
 /***/ }),
 /* 261 */
@@ -34007,13 +34094,13 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactCookie = __webpack_require__(226);
+	var _reactCookie = __webpack_require__(227);
 
 	var _reactCookie2 = _interopRequireDefault(_reactCookie);
 
 	var _mobxReact = __webpack_require__(261);
 
-	var _UserStore = __webpack_require__(260);
+	var _UserStore = __webpack_require__(226);
 
 	var _UserStore2 = _interopRequireDefault(_UserStore);
 
@@ -34156,11 +34243,11 @@
 
 	var _react2 = _interopRequireDefault(_react);
 
-	var _reactCookie = __webpack_require__(226);
+	var _reactCookie = __webpack_require__(227);
 
 	var _reactCookie2 = _interopRequireDefault(_reactCookie);
 
-	var _UserStore = __webpack_require__(260);
+	var _UserStore = __webpack_require__(226);
 
 	var _UserStore2 = _interopRequireDefault(_UserStore);
 
@@ -34265,15 +34352,15 @@
 
 	var _TruthStore2 = _interopRequireDefault(_TruthStore);
 
-	var _UserStore = __webpack_require__(260);
+	var _UserStore = __webpack_require__(226);
 
 	var _UserStore2 = _interopRequireDefault(_UserStore);
 
-	var _CardWrapper = __webpack_require__(258);
+	var _CardWrapper = __webpack_require__(259);
 
 	var _CardWrapper2 = _interopRequireDefault(_CardWrapper);
 
-	var _reactCookie = __webpack_require__(226);
+	var _reactCookie = __webpack_require__(227);
 
 	var _reactCookie2 = _interopRequireDefault(_reactCookie);
 
@@ -34312,12 +34399,12 @@
 	        _UserStore2.default.setWhoIAm(me);
 
 	        if (!(isLeader == me)) {
-	          console.log('I am the leader');
 	          _UserStore2.default.setGamePlayers([isLeader, me]);
 	        } else {
-	          console.log('I am not the leader');
 	          _UserStore2.default.setGamePlayers([me, group.substring(37, 73)]);
 	        }
+	        //lastly start the game
+	        _TruthStore2.default.startGame(_UserStore2.default.getGamePlayers);
 	      });
 	    }
 	  }, {
@@ -34409,7 +34496,7 @@
 	    key: 'render',
 	    value: function render() {
 	      // console.log("______________RENDER")
-	      // console.log(TruthStore.unansweredTruths.peek());
+	      // console.log(TruthStore.getUnansweredTruths.peek());
 	      // console.log("______________RENDER\n\n\n")
 	      return _react2.default.createElement(
 	        'div',

@@ -1,10 +1,12 @@
 import { computed, observable, action } from 'mobx';
+import UserStore from './UserStore';
 import cookie from 'react-cookie';
 import axios from 'axios';
 
 class TruthStore {
   @observable truths = [];
   @observable chatroom = '';
+  @observable gameStarted = false;
   @observable socket = io.connect(`//${window.location.hostname}:6357`);
   @observable currentTruth = null;
   @observable questionProgress = [false,false];
@@ -16,7 +18,7 @@ class TruthStore {
   @action setChatroom(roomName){ this.chatroom = roomName; }
   @computed get getChatroom(){return this.chatroom; }
 
-  @action setUnansweredTruths(playersArr){
+  @action setUnansweredTruths(playersArr,callback){
     axios.get(`/api/get-unanswered-questions/?p1=${playersArr[0]}&p2=${playersArr[1]}`)
     .then((response)=> {
       if(response.status === 200){
@@ -25,33 +27,121 @@ class TruthStore {
           return arr;
         },[]);
         this.truths = tempArr;
+        callback();
       }
     })
     .catch((err) => {
       console.error(err.message);
+      callback(false);
     });
   }
+
   @computed get getUnansweredTruths(){ return this.truths; }
 
 
 
 
 
-  @computed get generateQuestions(){
-    //Step 1: Check URL to see if both players have answered
-    //        If No variables || Yes: generate Question
-    //            Emit to chatroom, the question ID and question
-    //Step 2: If Not both responded, do nothing
-    //Step 3: update both users URLs with game state,
+  @action generateQuestions(){
     if(typeof this.truths !== 'undefined'){
       let randomIndex = this.getRandomNumber(0,this.truths.length-1);
-      console.log(this.truths[randomIndex]);
       this.currentTruth = this.truths[randomIndex];
+      this.addToSearchQuery('qid',randomIndex);
+      this.addToSearchQuery('p1','ZmFsc2U');
+      this.addToSearchQuery('p2','ZmFsc2U');
     }
   }
 
 
+  @action startGame(players){
+    this.gameStarted = true;
+    if(!this.searchSearchQuery("c3RhcnR1ZA","dHJ1ZQ")){
+      console.log("starting game");
+      this.addToSearchQuery("c3RhcnR1ZA","dHJ1ZQ");
+    } else {
+      console.log("Game has started");
+    }
+    if(UserStore.isLeader){
+      this.setUnansweredTruths(players,()=>{
+        console.log('pulled all questions!');
+        this.setGameState();
 
+      });
+    }
+  }
+
+  @action setGameState(){
+
+    if(this.searchSearchQuery('qid',"[0-9].+")){
+      console.log("Question ID EXISTS IN QUERY");
+      if(this.searchSearchQuery('p1',"(0|1)") && this.searchSearchQuery('p2',"(0|1)")){
+        console.log("GO TO NEXT QUESTION");
+        //submit answers to DB
+        //go on to new QUESTION
+
+      } else {
+        console.log("DONE FOR NOW, WAITING FOR PLAYERS RESPONSE");
+      }
+    } else {
+      console.log("NEED TO GENERATE QUESTION");
+      this.generateQuestions();
+      console.log("now looping back");
+      this.setGameState();
+    }
+  }
+
+  //TODO
+  @action updateSearchQuery(key,newValue){
+
+  }
+  //TODO
+  @action submitQuestionResponse(questionID,players,response){
+
+  }
+
+  @action addToSearchQuery(key,value){
+    if(!window.location.search.length){
+      console.log("THERE ARE NO QUERIES");
+      window.history.pushState(
+        { path:window.location.href }, '',
+        window.location.href + `?${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+      );
+    } else {
+      console.log("THERE ARE QUERIES!!!");
+      if(!this.searchSearchQuery(key,value)){
+        window.history.pushState(
+          { path:window.location.href }, '',
+          window.location.href + `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`
+        );
+      }
+    }
+  }
+
+  @action searchSearchQuery(key,value){
+    let query = window.location.search;
+    if(query.length){
+      query = query.split("?")[1].split("&");
+      query = query.reduce(function(obj,elem){
+        elem = elem.split("=");
+        obj[elem[0]] = elem[1];
+        return obj;
+      },{});
+      if(key in query){
+        if(typeof value === 'undefined'){ //general key search
+          return true;
+        } else {
+          let valueRegex = new RegExp(""+value);
+          if(valueRegex.test(query[key])){
+            return true;
+          } else {
+            return false;
+          }
+        }
+
+      }
+    }
+    return false;
+  }
 
 
   constructor(){

@@ -23,14 +23,12 @@ export default class Game extends Component{
       UserStore.setWhoIAm(me);
 
       if(!(isLeader==me)){
-        console.log('I am the leader');
         UserStore.setGamePlayers([isLeader,me]);
-
       } else {
-        console.log('I am not the leader');
         UserStore.setGamePlayers([me,group.substring(37,73)]);
       }
-
+      //lastly start the game
+      TruthStore.startGame(UserStore.getGamePlayers);
     });
   }
 
