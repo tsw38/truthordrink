@@ -228,4 +228,75 @@ body{
       }
     }
   }
+
+
+
+  .question-wrapper{
+    background-color:white;
+    @include display-flex;
+    @include flex-shrink(1);
+    @include flex-grow(1);
+    @include justify-content(space-between);
+    @include flex-direction(column);
+    @include flex-wrap(wrap);
+    width:100%;
+    overflow:hidden;
+
+    .row{
+      width:100%;
+    }
+
+    .question{
+      @include flex(4);
+      @include display-flex;
+      @include justify-content(center);
+      @include align-items(center);
+      width:94%;
+      padding:8% 3% 0;
+
+      p{
+        color:lighten(black,26%);
+        font-size:1.4em;
+        letter-spacing:0.6px;
+        word-spacing:1.4px;
+        line-height:1.2;
+        text-transform:uppercase;
+        font-weight:700;
+        width: 76%;
+        text-align: center;
+      }
+    }
+    .vote{
+      @include display-flex;
+      @include justify-content(space-between);
+      @include flex(1);
+      padding: 0 3% 5%;
+      width:94%;
+
+
+      .drink{
+        cursor:pointer;
+        background-image:url(./../assets/voting.png);
+        background-repeat: no-repeat;
+        background-size:cover;
+        height:90px; width:90px;
+        @include rotate(180deg);
+
+        &:hover{
+          background-position:-90px 0;
+        }
+      }
+      .truth{
+        cursor:pointer;
+        background-image:url(./../assets/voting.png);
+        background-repeat: no-repeat;
+        background-size:cover;
+        height:90px; width:90px;
+
+        &:hover{
+          background-position:-180px 0;
+        }
+      }
+    }
+  }
 }

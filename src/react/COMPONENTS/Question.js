@@ -15,10 +15,10 @@ export default class Question extends Component{
     return(
       <div className="question-wrapper">
 
-        <div className="row">
+        <div className="row question">
           <p>{TruthStore.currentTruth}</p>
         </div>
-        <div className="row">
+        <div className="row vote">
           <div className="drink"></div>
           <div className="truth"></div>
         </div>

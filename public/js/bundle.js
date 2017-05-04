@@ -34535,7 +34535,7 @@
 	        { className: 'question-wrapper' },
 	        _react2.default.createElement(
 	          'div',
-	          { className: 'row' },
+	          { className: 'row question' },
 	          _react2.default.createElement(
 	            'p',
 	            null,
@@ -34544,7 +34544,7 @@
 	        ),
 	        _react2.default.createElement(
 	          'div',
-	          { className: 'row' },
+	          { className: 'row vote' },
 	          _react2.default.createElement('div', { className: 'drink' }),
 	          _react2.default.createElement('div', { className: 'truth' })
 	        )
