@@ -16,6 +16,10 @@ export default class Game extends Component{
 
   componentWillMount(){
     this.incorrectURLQuery(()=>{
+      let gameCookie = cookie.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+          gameCookie = gameCookie.split(/\-/g);
+          gameCookie = gameCookie[gameCookie.length - 1];
+      TruthStore.setChatroom(gameCookie);
       let group = cookie.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
       let me    = cookie.load('dHJ1dGhvcmRyaW5rdXNlcg').substring(0,36);
       let isLeader = group.substring(0,36);
@@ -30,16 +34,37 @@ export default class Game extends Component{
       //lastly start the game
       TruthStore.startGame(UserStore.getGamePlayers);
     });
+
+    //if the user is not the leader, check for game question cookie and read it
+    var gameQuestion = cookie.load('Z2FtZS1xdWVzdGlvbg');
+    if(typeof gameQuestion !== 'undefined'){
+      TruthStore.setCurrentTruth(atob(gameQuestion));
+    }
   }
 
   componentDidMount(){
     if(UserStore.getLeader){ // only the leader will request the questions
       // TruthStore.setUnansweredTruths([group.substring(0,36),group.substring(37,73)])
+      TruthStore.socket.on('from follower',(payload)=>{
+        console.log('message from follower');
+        console.log(payload);
+      });
+    } else {
+      TruthStore.socket.on('from leader',(payload)=>{
+        payload = payload.payload;
+        console.log('message from leader');
+        if("question" in payload){
+          console.log(payload.question);
+          TruthStore.setCurrentTruth(payload.question);
+          cookie.save('Z2FtZS1xdWVzdGlvbg', btoa(payload.question).replace(/\=/g,''));
+        }
+      });
     }
     // if(!(this.state.leader == me)){ // only the leader will request the questions
     //
     //   // TruthStore.getUnansweredTruths()
     // }
+
   }
 
   incorrectURLQuery(cb){

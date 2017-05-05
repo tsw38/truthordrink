@@ -19,8 +19,8 @@ export default class Question extends Component{
           <p>{TruthStore.currentTruth}</p>
         </div>
         <div className="row vote">
-          <div className="drink"></div>
-          <div className="truth"></div>
+          <div className="drink"><div className="image"></div></div>
+          <div className="truth"><div className="image"></div></div>
         </div>
       </div>
     )

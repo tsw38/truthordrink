@@ -25463,7 +25463,7 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6, _descriptor7;
+	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6, _descriptor7, _descriptor8;
 
 	var _mobx = __webpack_require__(225);
 
@@ -25528,6 +25528,12 @@
 
 	var TruthStore = (_class = function () {
 	  _createClass(TruthStore, [{
+	    key: 'setGameState',
+	    value: function setGameState() {
+	      var newState = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	      this.gameState = newState;
+	    }
+	  }, {
 	    key: 'getRandomNumber',
 	    value: function getRandomNumber(min, max) {
 	      return Math.floor(Math.random() * (max - min + 1) + min);
@@ -25557,111 +25563,109 @@
 	      });
 	    }
 	  }, {
+	    key: 'setCurrentTruth',
+	    value: function setCurrentTruth(truth) {
+	      this.currentTruth = truth;
+	    }
+	  }, {
 	    key: 'generateQuestions',
 	    value: function generateQuestions() {
+	      var _this2 = this;
+
 	      if (typeof this.truths !== 'undefined') {
 	        var randomIndex = this.getRandomNumber(0, this.truths.length - 1);
 	        this.currentTruth = this.truths[randomIndex];
-	        this.addToSearchQuery('qid', randomIndex);
-	        this.addToSearchQuery('p1', 'ZmFsc2U');
-	        this.addToSearchQuery('p2', 'ZmFsc2U');
+	        this.updateGameStateCookie('qid', randomIndex, function () {
+	          _this2.updateGameStateCookie('p1', 'ZmFsc2U', function () {
+	            _this2.updateGameStateCookie('p2', 'ZmFsc2U');
+	          });
+	        });
 	      }
 	    }
 	  }, {
 	    key: 'startGame',
 	    value: function startGame(players) {
-	      var _this2 = this;
+	      var _this3 = this;
 
 	      this.gameStarted = true;
-	      if (!this.searchSearchQuery("c3RhcnR1ZA", "dHJ1ZQ", false)) {
-	        console.log("starting game");
-	        this.addToSearchQuery("c3RhcnR1ZA", "dHJ1ZQ");
-	      } else {
-	        console.log("Game has started");
-	      }
+	      //first everyone must join the game room
+	      this.socket.emit('gameroom-initialize', { room: this.chatroom });
 	      if (_UserStore2.default.isLeader) {
 	        this.setUnansweredTruths(players, function () {
-	          console.log('pulled all questions!');
-	          _this2.setGameState();
+	          console.log("PULLED ALL THE TRUTHS");
+	          _this3.setGameState();
 	        });
+	      } else {
+	        console.log("I AM NOT THE LEADER,WAIT FOR RESPONSE FROM SERVER");
 	      }
 	    }
+
+	    // FUNC: Initialize the game,
+	    // sets the current question if necessary
+
 	  }, {
 	    key: 'setGameState',
 	    value: function setGameState() {
-
-	      if (this.searchSearchQuery('qid', "[0-9].+", true)) {
-	        console.log("Question ID EXISTS IN QUERY");
-	        if (!this.currentTruth) {
-	          this.currentTruth = this.truths[this.getTempStore];
-	        }
-	        if (this.searchSearchQuery('p1', "(0|1)", false) && this.searchSearchQuery('p2', "(0|1)", false)) {
-	          console.log("GO TO NEXT QUESTION");
-	          //submit answers to DB
-	          //go on to new QUESTION
-	        } else {
-	          console.log("DONE FOR NOW, WAITING FOR PLAYERS RESPONSE");
-	        }
-	      } else {
-	        console.log("NEED TO GENERATE QUESTION");
+	      //value end up being qid-p1-p2
+	      var questionStateCookie = _reactCookie2.default.load('Z2FtZS1zdGF0ZQ');
+	      if (typeof questionStateCookie === 'undefined') {
 	        this.generateQuestions();
-	        console.log("now looping back");
-	        this.setGameState();
+	      } else {
+	        var progress = this.computeGameState();
+	        if (progress.p1.length === 1 && progress.p2.length === 1) {
+	          console.log("WE CAN MOVE ON TO THE NEXT QUESTION");
+	        } else {
+	          this.currentTruth = this.truths[parseInt(progress.qid, 10)];
+	          console.log("WE HAVE GOT TO STAY AT THIS SAME QUESTION");
+	          this.socket.emit('gameroom', {
+	            chatroom: this.chatroom,
+	            fromLeader: true,
+	            question: this.currentTruth
+	          });
+	        }
 	      }
 	    }
-
-	    //TODO
-
 	  }, {
-	    key: 'updateSearchQuery',
-	    value: function updateSearchQuery(key, newValue) {}
+	    key: 'updateGameStateCookie',
+	    value: function updateGameStateCookie(key, value) {
+	      var cb = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : '';
+
+	      this.gameState = this.gameState + '.' + key + '-' + value;
+	      if (typeof cb === 'function') cb();else {
+	        this.socket.emit('gameroom', {
+	          chatroom: this.chatroom,
+	          fromLeader: true,
+	          question: this.currentTruth
+	        });
+	        this.gameState = this.gameState.substring(1, this.gameState.length);
+	        _reactCookie2.default.save('Z2FtZS1zdGF0ZQ', btoa(this.gameState).replace(/\=/g, ''));
+	      }
+	    }
+	  }, {
+	    key: 'computeGameState',
+	    value: function computeGameState() {
+	      var questionStateCookie = _reactCookie2.default.load('Z2FtZS1zdGF0ZQ');
+	      if (typeof questionStateCookie !== 'undefined') {
+	        questionStateCookie = atob(questionStateCookie).split('.');
+	        questionStateCookie = questionStateCookie.reduce(function (obj, elem) {
+	          elem = elem.split("-");
+	          obj[elem[0]] = elem[1];
+	          return obj;
+	        }, {});
+	        return questionStateCookie;
+	      } else {
+	        return false;
+	      }
+	    }
 	    //TODO
 
 	  }, {
 	    key: 'submitQuestionResponse',
 	    value: function submitQuestionResponse(questionID, players, response) {}
 	  }, {
-	    key: 'addToSearchQuery',
-	    value: function addToSearchQuery(key, value) {
-	      if (!window.location.search.length) {
-	        console.log("THERE ARE NO QUERIES");
-	        window.history.pushState({ path: window.location.href }, '', window.location.href + ('?' + encodeURIComponent(key) + '=' + encodeURIComponent(value)));
-	      } else {
-	        console.log("THERE ARE QUERIES!!!");
-	        if (!this.searchSearchQuery(key, value, false)) {
-	          window.history.pushState({ path: window.location.href }, '', window.location.href + ('&' + encodeURIComponent(key) + '=' + encodeURIComponent(value)));
-	        }
-	      }
-	    }
-	  }, {
-	    key: 'searchSearchQuery',
-	    value: function searchSearchQuery(key, value, willStoreValue) {
-	      var query = window.location.search;
-	      if (query.length) {
-	        query = query.split("?")[1].split("&");
-	        query = query.reduce(function (obj, elem) {
-	          elem = elem.split("=");
-	          obj[elem[0]] = elem[1];
-	          return obj;
-	        }, {});
-	        if (key in query) {
-	          if (typeof value === 'undefined') {
-	            //general key search
-	            return true;
-	          } else {
-	            var valueRegex = new RegExp("" + value);
-	            if (valueRegex.test(query[key])) {
-	              if (willStoreValue) {
-	                this.tempStore = query[key];
-	              }
-	              return true;
-	            } else {
-	              return false;
-	            }
-	          }
-	        }
-	      }
-	      return false;
+	    key: 'getGameState',
+	    get: function get() {
+	      return this.gameState;
 	    }
 	  }, {
 	    key: 'getTempStore',
@@ -25677,6 +25681,11 @@
 	    key: 'getUnansweredTruths',
 	    get: function get() {
 	      return this.truths;
+	    }
+	  }, {
+	    key: 'getCurrentTruth',
+	    get: function get() {
+	      return this.currentTruth;
 	    }
 	  }]);
 
@@ -25695,8 +25704,11 @@
 
 	    _initDefineProp(this, 'currentTruth', _descriptor6, this);
 
-	    _initDefineProp(this, 'questionProgress', _descriptor7, this);
+	    _initDefineProp(this, 'gameState', _descriptor7, this);
 
+	    _initDefineProp(this, 'questionProgress', _descriptor8, this);
+
+	    this.gameState = this.gameState;
 	    this.tempStore = this.tempStore;
 	    this.truths = this.truths;
 	    this.socket = this.socket;
@@ -25737,12 +25749,17 @@
 	  initializer: function initializer() {
 	    return null;
 	  }
-	}), _descriptor7 = _applyDecoratedDescriptor(_class.prototype, 'questionProgress', [_mobx.observable], {
+	}), _descriptor7 = _applyDecoratedDescriptor(_class.prototype, 'gameState', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return "";
+	  }
+	}), _descriptor8 = _applyDecoratedDescriptor(_class.prototype, 'questionProgress', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return [false, false];
 	  }
-	}), _applyDecoratedDescriptor(_class.prototype, 'getTempStore', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getTempStore'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setChatroom', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getChatroom', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'startGame', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'startGame'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'updateSearchQuery', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'updateSearchQuery'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'submitQuestionResponse', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'submitQuestionResponse'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'addToSearchQuery', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'addToSearchQuery'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'searchSearchQuery', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'searchSearchQuery'), _class.prototype)), _class);
+	}), _applyDecoratedDescriptor(_class.prototype, 'getGameState', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getTempStore', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getTempStore'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setChatroom', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getChatroom', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setCurrentTruth', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setCurrentTruth'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getCurrentTruth', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getCurrentTruth'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'startGame', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'startGame'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'updateGameStateCookie', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'updateGameStateCookie'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'computeGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'computeGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'submitQuestionResponse', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'submitQuestionResponse'), _class.prototype)), _class);
 
 
 	var truthStore = window.truthStore = new TruthStore();
@@ -34424,6 +34441,10 @@
 	    key: 'componentWillMount',
 	    value: function componentWillMount() {
 	      this.incorrectURLQuery(function () {
+	        var gameCookie = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
+	        gameCookie = gameCookie.split(/\-/g);
+	        gameCookie = gameCookie[gameCookie.length - 1];
+	        _TruthStore2.default.setChatroom(gameCookie);
 	        var group = _reactCookie2.default.load('DHJ1dGhvcmRyaW5rZ3JvdXA');
 	        var me = _reactCookie2.default.load('dHJ1dGhvcmRyaW5rdXNlcg').substring(0, 36);
 	        var isLeader = group.substring(0, 36);
@@ -34438,13 +34459,34 @@
 	        //lastly start the game
 	        _TruthStore2.default.startGame(_UserStore2.default.getGamePlayers);
 	      });
+
+	      //if the user is not the leader, check for game question cookie and read it
+	      var gameQuestion = _reactCookie2.default.load('Z2FtZS1xdWVzdGlvbg');
+	      if (typeof gameQuestion !== 'undefined') {
+	        _TruthStore2.default.setCurrentTruth(atob(gameQuestion));
+	      }
 	    }
 	  }, {
 	    key: 'componentDidMount',
 	    value: function componentDidMount() {
-	      if (_UserStore2.default.getLeader) {} // only the leader will request the questions
-	      // TruthStore.setUnansweredTruths([group.substring(0,36),group.substring(37,73)])
-
+	      if (_UserStore2.default.getLeader) {
+	        // only the leader will request the questions
+	        // TruthStore.setUnansweredTruths([group.substring(0,36),group.substring(37,73)])
+	        _TruthStore2.default.socket.on('from follower', function (payload) {
+	          console.log('message from follower');
+	          console.log(payload);
+	        });
+	      } else {
+	        _TruthStore2.default.socket.on('from leader', function (payload) {
+	          payload = payload.payload;
+	          console.log('message from leader');
+	          if ("question" in payload) {
+	            console.log(payload.question);
+	            _TruthStore2.default.setCurrentTruth(payload.question);
+	            _reactCookie2.default.save('Z2FtZS1xdWVzdGlvbg', btoa(payload.question).replace(/\=/g, ''));
+	          }
+	        });
+	      }
 	      // if(!(this.state.leader == me)){ // only the leader will request the questions
 	      //
 	      //   // TruthStore.getUnansweredTruths()
@@ -34545,8 +34587,16 @@
 	        _react2.default.createElement(
 	          'div',
 	          { className: 'row vote' },
-	          _react2.default.createElement('div', { className: 'drink' }),
-	          _react2.default.createElement('div', { className: 'truth' })
+	          _react2.default.createElement(
+	            'div',
+	            { className: 'drink' },
+	            _react2.default.createElement('div', { className: 'image' })
+	          ),
+	          _react2.default.createElement(
+	            'div',
+	            { className: 'truth' },
+	            _react2.default.createElement('div', { className: 'image' })
+	          )
 	        )
 	      );
 	    }

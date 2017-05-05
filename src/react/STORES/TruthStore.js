@@ -10,8 +10,11 @@ class TruthStore {
   @observable gameStarted = false;
   @observable socket = io.connect(`//${window.location.hostname}:6357`);
   @observable currentTruth = null;
+  @observable gameState = "";
   @observable questionProgress = [false,false];
 
+  @computed get getGameState(){ return this.gameState; }
+  @action setGameState(newState = ""){ this.gameState = newState; }
 
   @computed get getTempStore(){ return this.tempStore; }
   @action getRandomNumber(min,max){ return Math.floor(Math.random()*(max-min+1)+min); };
@@ -39,7 +42,8 @@ class TruthStore {
 
   @computed get getUnansweredTruths(){ return this.truths; }
 
-
+  @action setCurrentTruth(truth){this.currentTruth = truth; }
+  @computed get getCurrentTruth(){ return this.currentTruth }
 
 
 
@@ -47,112 +51,89 @@ class TruthStore {
     if(typeof this.truths !== 'undefined'){
       let randomIndex = this.getRandomNumber(0,this.truths.length-1);
       this.currentTruth = this.truths[randomIndex];
-      this.addToSearchQuery('qid',randomIndex);
-      this.addToSearchQuery('p1','ZmFsc2U');
-      this.addToSearchQuery('p2','ZmFsc2U');
+      this.updateGameStateCookie('qid',randomIndex,()=>{
+        this.updateGameStateCookie('p1','ZmFsc2U',()=>{
+          this.updateGameStateCookie('p2','ZmFsc2U');
+        });
+      });
     }
   }
 
 
   @action startGame(players){
     this.gameStarted = true;
-    if(!this.searchSearchQuery("c3RhcnR1ZA","dHJ1ZQ",false)){
-      console.log("starting game");
-      this.addToSearchQuery("c3RhcnR1ZA","dHJ1ZQ");
-    } else {
-      console.log("Game has started");
-    }
+    //first everyone must join the game room
+    this.socket.emit('gameroom-initialize',{ room: this.chatroom });
     if(UserStore.isLeader){
-      this.setUnansweredTruths(players,()=>{
-        console.log('pulled all questions!');
+      this.setUnansweredTruths(players, ()=>{
+        console.log("PULLED ALL THE TRUTHS")
         this.setGameState();
-
       });
-    }
-  }
-
-  @action setGameState(){
-
-    if(this.searchSearchQuery('qid',"[0-9].+",true)){
-      console.log("Question ID EXISTS IN QUERY");
-      if(!this.currentTruth){
-        this.currentTruth = this.truths[this.getTempStore];
-      }
-      if(this.searchSearchQuery('p1',"(0|1)",false) && this.searchSearchQuery('p2',"(0|1)",false)){
-        console.log("GO TO NEXT QUESTION");
-        //submit answers to DB
-        //go on to new QUESTION
-
-      } else {
-        console.log("DONE FOR NOW, WAITING FOR PLAYERS RESPONSE");
-      }
     } else {
-      console.log("NEED TO GENERATE QUESTION");
+      console.log("I AM NOT THE LEADER,WAIT FOR RESPONSE FROM SERVER");
+    }
+
+  }
+
+  // FUNC: Initialize the game,
+  // sets the current question if necessary
+  @action setGameState(){
+    //value end up being qid-p1-p2
+    let questionStateCookie = cookie.load('Z2FtZS1zdGF0ZQ');
+    if(typeof questionStateCookie === 'undefined'){
       this.generateQuestions();
-      console.log("now looping back");
-      this.setGameState();
+    } else {
+      let progress = this.computeGameState();
+      if(progress.p1.length === 1 && progress.p2.length === 1){
+        console.log("WE CAN MOVE ON TO THE NEXT QUESTION")
+      } else {
+        this.currentTruth = this.truths[parseInt(progress.qid,10)];
+        console.log("WE HAVE GOT TO STAY AT THIS SAME QUESTION");
+        this.socket.emit('gameroom',{
+          chatroom: this.chatroom,
+          fromLeader:true,
+          question: this.currentTruth
+        });
+      }
     }
   }
 
-  //TODO
-  @action updateSearchQuery(key,newValue){
 
+  @action updateGameStateCookie(key,value,cb = ''){
+    this.gameState = `${this.gameState}.${key}-${value}`;
+    if(typeof cb === 'function') cb();
+    else {
+      this.socket.emit('gameroom',{
+        chatroom: this.chatroom,
+        fromLeader:true,
+        question: this.currentTruth
+      });
+      this.gameState = this.gameState.substring(1,this.gameState.length);
+      cookie.save('Z2FtZS1zdGF0ZQ',btoa(this.gameState).replace(/\=/g,''));
+    }
+  }
+
+  @action computeGameState(){
+    let questionStateCookie = cookie.load('Z2FtZS1zdGF0ZQ');
+    if(typeof questionStateCookie !== 'undefined'){
+      questionStateCookie = atob(questionStateCookie).split('.');
+      questionStateCookie = questionStateCookie.reduce((obj, elem)=>{
+        elem = elem.split("-");
+        obj[elem[0]] = elem[1];
+        return obj;
+      },{});
+      return questionStateCookie;
+    } else {
+      return false;
+    }
   }
   //TODO
   @action submitQuestionResponse(questionID,players,response){
 
   }
 
-  @action addToSearchQuery(key,value){
-    if(!window.location.search.length){
-      console.log("THERE ARE NO QUERIES");
-      window.history.pushState(
-        { path:window.location.href }, '',
-        window.location.href + `?${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-      );
-    } else {
-      console.log("THERE ARE QUERIES!!!");
-      if(!this.searchSearchQuery(key,value,false)){
-        window.history.pushState(
-          { path:window.location.href }, '',
-          window.location.href + `&${encodeURIComponent(key)}=${encodeURIComponent(value)}`
-        );
-      }
-    }
-  }
-
-  @action searchSearchQuery(key,value,willStoreValue){
-    let query = window.location.search;
-    if(query.length){
-      query = query.split("?")[1].split("&");
-      query = query.reduce(function(obj,elem){
-        elem = elem.split("=");
-        obj[elem[0]] = elem[1];
-        return obj;
-      },{});
-      if(key in query){
-        if(typeof value === 'undefined'){ //general key search
-          return true;
-        } else {
-          let valueRegex = new RegExp(""+value);
-          if(valueRegex.test(query[key])){
-            if(willStoreValue){
-              this.tempStore = query[key];
-            }
-            return true;
-
-          } else {
-            return false;
-          }
-        }
-
-      }
-    }
-    return false;
-  }
-
-
   constructor(){
+    this.gameState = this.gameState;
     this.tempStore = this.tempStore;
     this.truths = this.truths;
     this.socket = this.socket;

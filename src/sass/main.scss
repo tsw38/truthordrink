@@ -270,31 +270,55 @@ body{
       @include display-flex;
       @include justify-content(space-between);
       @include flex(1);
-      padding: 0 3% 5%;
+      padding: 0 3% 3%;
       width:94%;
 
 
       .drink{
         cursor:pointer;
-        background-image:url(./../assets/voting.png);
-        background-repeat: no-repeat;
-        background-size:cover;
-        height:90px; width:90px;
-        @include rotate(180deg);
+        padding-top: 11%;
+        width: 11%;
+        height:0;
+        position:relative;
 
-        &:hover{
-          background-position:-90px 0;
+        .image{
+          position:absolute;
+          top:0; bottom:0;
+          left:0; right:0;
+          background-image:url(./../assets/voting.png);
+          background-repeat: no-repeat;
+          background-size:cover;
+          height:100%; width:100%;
+          @include rotate(180deg);
+          opacity:0.25;
+
+          &:hover{
+            opacity:1;
+            background-position:50% 0;
+          }
         }
       }
+
       .truth{
         cursor:pointer;
-        background-image:url(./../assets/voting.png);
-        background-repeat: no-repeat;
-        background-size:cover;
-        height:90px; width:90px;
+        padding-top: 11%;
+        width: 11%;
+        height:0;
+        position:relative;
 
-        &:hover{
-          background-position:-180px 0;
+        .image{
+          position:absolute;
+          top:0; bottom:0;
+          left:0; right:0;
+          background-image:url(./../assets/voting.png);
+          background-repeat: no-repeat;
+          background-size:cover;
+          height:100%; width:100%;
+          opacity:0.25;
+          &:hover{
+            opacity:1;
+            background-position:100% 0;
+          }
         }
       }
     }

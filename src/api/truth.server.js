@@ -58,7 +58,6 @@ app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
 console.log("---------REGISTERING GAME ROUTES--------");
 gameRoutes(app,mysql,path);
 
-
 io.on('connect', handleSockets); //all of the handshakes
 
 let activeUsers = {};
@@ -146,11 +145,27 @@ function handleSockets(socket){
   });
 
 
-  socket.on('game', (request)=>{
-    socket.join(request.roomName);
+  socket.on('gameroom-initialize', (game)=>{
+    console.log(" socket is joining room ");
+    socket.join(game.room);
+    console.log(game.room);
+    console.log(" socket is joining room ");
+
+  });
+  socket.on('gameroom', (payload)=>{
+    if(payload.fromLeader){
+      socket.broadcast.emit('from leader',{
+        payload
+      });
+    } else {
+      socket.broadcast.emit('from follower',{
+        payload
+      });
+    }
+
     //TODO ONLY ALLOW CHATROOM MESSAGES FROM THOSE IN CHATROOM
     //TODO complete the handshake
-  })
+  });
 
   socket.on('disconnect', () =>{
     console.log("\n\n\n\n-------------- CLEAN ACTIVE USER POOL --------------");
