@@ -33,7 +33,7 @@ gulp.task('prod-clean', shell.task([
     `rm -rf build/*`,
     `cp -a ./public/ ./build/`,
     `rm build/css/main.css.map build/js/bundle.js public/js/bundle.min.js -f`,
-    `sed -i '' -e 's/bundle/bundle.min/g' ./build/index.html`
+    `sed -i '' -e 's/bundle/bundle.min/g' ./build/`
   ])
 );
 
