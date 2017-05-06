@@ -281,6 +281,11 @@ body{
         height:0;
         position:relative;
 
+        &.voted .image{
+          opacity:1;
+          background-position:50% 0;
+        }
+
         .image{
           position:absolute;
           top:0; bottom:0;
@@ -306,6 +311,11 @@ body{
         height:0;
         position:relative;
 
+        &.voted .image{
+          opacity:1;
+          background-position:100% 0;
+        }
+
         .image{
           position:absolute;
           top:0; bottom:0;
@@ -315,6 +325,7 @@ body{
           background-size:cover;
           height:100%; width:100%;
           opacity:0.25;
+
           &:hover{
             opacity:1;
             background-position:100% 0;

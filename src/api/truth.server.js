@@ -154,17 +154,10 @@ function handleSockets(socket){
   });
   socket.on('gameroom', (payload)=>{
     if(payload.fromLeader){
-      socket.broadcast.emit('from leader',{
-        payload
-      });
+      io.sockets.in(payload.chatroom).emit('from leader',payload);
     } else {
-      socket.broadcast.emit('from follower',{
-        payload
-      });
+      io.sockets.in(payload.chatroom).emit('from follower',payload);
     }
-
-    //TODO ONLY ALLOW CHATROOM MESSAGES FROM THOSE IN CHATROOM
-    //TODO complete the handshake
   });
 
   socket.on('disconnect', () =>{

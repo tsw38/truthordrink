@@ -22,13 +22,13 @@ export default class User extends Component{
           UserStore.socket.emit('room',[_me, this.state.uuid]);
         }
         else if(typeof group !== 'undefined'){
-          console.error("you are already in a group");
+          // console.error("you are already in a group");
         }
       } else {
-        console.error('you clicked on yourself');
+        // console.error('you clicked on yourself');
       }
     } else {
-      console.error('you need to sign in');
+      // console.error('you need to sign in');
     }
   }
 

@@ -25463,7 +25463,7 @@
 
 	var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6, _descriptor7, _descriptor8;
+	var _desc, _value, _class, _descriptor, _descriptor2, _descriptor3, _descriptor4, _descriptor5, _descriptor6, _descriptor7, _descriptor8, _descriptor9;
 
 	var _mobx = __webpack_require__(225);
 
@@ -25575,6 +25575,7 @@
 	      if (typeof this.truths !== 'undefined') {
 	        var randomIndex = this.getRandomNumber(0, this.truths.length - 1);
 	        this.currentTruth = this.truths[randomIndex];
+	        this.questionID = randomIndex;
 	        this.updateGameStateCookie('qid', randomIndex, function () {
 	          _this2.updateGameStateCookie('p1', 'ZmFsc2U', function () {
 	            _this2.updateGameStateCookie('p2', 'ZmFsc2U');
@@ -25592,12 +25593,9 @@
 	      this.socket.emit('gameroom-initialize', { room: this.chatroom });
 	      if (_UserStore2.default.isLeader) {
 	        this.setUnansweredTruths(players, function () {
-	          console.log("PULLED ALL THE TRUTHS");
 	          _this3.setGameState();
 	        });
-	      } else {
-	        console.log("I AM NOT THE LEADER,WAIT FOR RESPONSE FROM SERVER");
-	      }
+	      } else {}
 	    }
 
 	    // FUNC: Initialize the game,
@@ -25612,11 +25610,9 @@
 	        this.generateQuestions();
 	      } else {
 	        var progress = this.computeGameState();
-	        if (progress.p1.length === 1 && progress.p2.length === 1) {
-	          console.log("WE CAN MOVE ON TO THE NEXT QUESTION");
-	        } else {
+	        if (progress.p1.length === 1 && progress.p2.length === 1) {} else {
 	          this.currentTruth = this.truths[parseInt(progress.qid, 10)];
-	          console.log("WE HAVE GOT TO STAY AT THIS SAME QUESTION");
+	          this.questionID = parseInt(progress.qid, 10);
 	          this.socket.emit('gameroom', {
 	            chatroom: this.chatroom,
 	            fromLeader: true,
@@ -25624,6 +25620,11 @@
 	          });
 	        }
 	      }
+	    }
+	  }, {
+	    key: 'setGameProgress',
+	    value: function setGameProgress(player, response) {
+	      this.questionProgress[player] = response;
 	    }
 	  }, {
 	    key: 'updateGameStateCookie',
@@ -25635,7 +25636,8 @@
 	        this.socket.emit('gameroom', {
 	          chatroom: this.chatroom,
 	          fromLeader: true,
-	          question: this.currentTruth
+	          question: this.currentTruth,
+	          reset: true
 	        });
 	        this.gameState = this.gameState.substring(1, this.gameState.length);
 	        _reactCookie2.default.save('Z2FtZS1zdGF0ZQ', btoa(this.gameState).replace(/\=/g, ''));
@@ -25657,11 +25659,51 @@
 	        return false;
 	      }
 	    }
-	    //TODO
-
 	  }, {
 	    key: 'submitQuestionResponse',
-	    value: function submitQuestionResponse(questionID, players, response) {}
+	    value: function submitQuestionResponse(isLeader, response) {
+	      if (!isLeader) {
+	        // only do this if coming from someone else
+	        this.socket.emit('gameroom', {
+	          voting: true,
+	          isLeader: isLeader,
+	          chatroom: this.chatroom,
+	          response: response
+	        });
+	      } else {
+	        this.questionProgress[0] = response;
+
+	        if (this.getQuestionResponse[0] !== false && this.getQuestionResponse[1] !== false) {
+	          this.finalizeResponses();
+	        }
+	      }
+	    }
+	  }, {
+	    key: 'setGameProgress',
+	    value: function setGameProgress(player, response) {
+	      this.questionProgress[player] = response;
+	    }
+	  }, {
+	    key: 'finalizeResponses',
+	    value: function finalizeResponses() {
+	      var _this4 = this;
+
+	      var players = _UserStore2.default.getGamePlayers;
+	      _axios2.default.post('/api/submit-truth-response/', {
+	        players: players,
+	        qID: this.questionID,
+	        responses: this.questionProgress
+	      }).then(function (response) {
+	        if (response.status === 200) {
+	          _this4.truths.splice(_this4.questionID, 1);
+	          _this4.generateQuestions();
+	          _this4.questionProgress = [false, false];
+	        }
+	      }).catch(function (err) {
+	        console.error(err.message);
+	        callback(false);
+	      });
+	    }
 	  }, {
 	    key: 'getGameState',
 	    get: function get() {
@@ -25678,6 +25720,11 @@
 	      return this.chatroom;
 	    }
 	  }, {
+	    key: 'getQuestionID',
+	    get: function get() {
+	      return this.questionID;
+	    }
+	  }, {
 	    key: 'getUnansweredTruths',
 	    get: function get() {
 	      return this.truths;
@@ -25686,6 +25733,11 @@
 	    key: 'getCurrentTruth',
 	    get: function get() {
 	      return this.currentTruth;
+	    }
+	  }, {
+	    key: 'getQuestionResponse',
+	    get: function get() {
+	      return this.questionProgress;
 	    }
 	  }]);
 
@@ -25704,9 +25756,11 @@
 
 	    _initDefineProp(this, 'currentTruth', _descriptor6, this);
 
-	    _initDefineProp(this, 'gameState', _descriptor7, this);
+	    _initDefineProp(this, 'questionID', _descriptor7, this);
 
-	    _initDefineProp(this, 'questionProgress', _descriptor8, this);
+	    _initDefineProp(this, 'gameState', _descriptor8, this);
+
+	    _initDefineProp(this, 'questionProgress', _descriptor9, this);
 
 	    this.gameState = this.gameState;
 	    this.tempStore = this.tempStore;
@@ -25715,6 +25769,7 @@
 	    this.chatroom = this.chatroom;
 	    this.currentTruth = this.currentTruth;
 	    this.questionProgress = this.questionProgress;
+	    this.questionID = this.questionID;
 	    this.getRandomNumber = this.getRandomNumber.bind(this);
 	  }
 
@@ -25749,17 +25804,22 @@
 	  initializer: function initializer() {
 	    return null;
 	  }
-	}), _descriptor7 = _applyDecoratedDescriptor(_class.prototype, 'gameState', [_mobx.observable], {
+	}), _descriptor7 = _applyDecoratedDescriptor(_class.prototype, 'questionID', [_mobx.observable], {
+	  enumerable: true,
+	  initializer: function initializer() {
+	    return 0;
+	  }
+	}), _descriptor8 = _applyDecoratedDescriptor(_class.prototype, 'gameState', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return "";
 	  }
-	}), _descriptor8 = _applyDecoratedDescriptor(_class.prototype, 'questionProgress', [_mobx.observable], {
+	}), _descriptor9 = _applyDecoratedDescriptor(_class.prototype, 'questionProgress', [_mobx.observable], {
 	  enumerable: true,
 	  initializer: function initializer() {
 	    return [false, false];
 	  }
-	}), _applyDecoratedDescriptor(_class.prototype, 'getGameState', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getTempStore', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getTempStore'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setChatroom', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getChatroom', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setCurrentTruth', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setCurrentTruth'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getCurrentTruth', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getCurrentTruth'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'startGame', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'startGame'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'updateGameStateCookie', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'updateGameStateCookie'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'computeGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'computeGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'submitQuestionResponse', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'submitQuestionResponse'), _class.prototype)), _class);
+	}), _applyDecoratedDescriptor(_class.prototype, 'getGameState', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getTempStore', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getTempStore'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getRandomNumber', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'getRandomNumber'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setChatroom', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getChatroom', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getChatroom'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getQuestionID', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getQuestionID'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setUnansweredTruths', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getUnansweredTruths', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getUnansweredTruths'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setCurrentTruth', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setCurrentTruth'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getCurrentTruth', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getCurrentTruth'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'generateQuestions', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'generateQuestions'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'startGame', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'startGame'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameProgress', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameProgress'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'updateGameStateCookie', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'updateGameStateCookie'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'computeGameState', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'computeGameState'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'submitQuestionResponse', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'submitQuestionResponse'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'setGameProgress', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'setGameProgress'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'getQuestionResponse', [_mobx.computed], Object.getOwnPropertyDescriptor(_class.prototype, 'getQuestionResponse'), _class.prototype), _applyDecoratedDescriptor(_class.prototype, 'finalizeResponses', [_mobx.action], Object.getOwnPropertyDescriptor(_class.prototype, 'finalizeResponses'), _class.prototype)), _class);
 
 
 	var truthStore = window.truthStore = new TruthStore();
@@ -34192,7 +34252,7 @@
 
 	      _UserStore2.default.socket.on('from server', function (message) {
 	        if ('leader' in message) {
-	          console.log('leader is', message);
+	          // console.log('leader is',message);
 	          var isLeader = message.leader ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
 	          _UserStore2.default.setLeader(isLeader);
 	        }
@@ -34335,14 +34395,14 @@
 	          if (typeof group === 'undefined') {
 	            _UserStore2.default.socket.emit('room', [_me, this.state.uuid]);
 	          } else if (typeof group !== 'undefined') {
-	            console.error("you are already in a group");
+	            // console.error("you are already in a group");
 	          }
 	        } else {
-	          console.error('you clicked on yourself');
-	        }
+	            // console.error('you clicked on yourself');
+	          }
 	      } else {
-	        console.error('you need to sign in');
-	      }
+	          // console.error('you need to sign in');
+	        }
 	    }
 	  }, {
 	    key: 'render',
@@ -34471,26 +34531,23 @@
 	    value: function componentDidMount() {
 	      if (_UserStore2.default.getLeader) {
 	        // only the leader will request the questions
-	        // TruthStore.setUnansweredTruths([group.substring(0,36),group.substring(37,73)])
 	        _TruthStore2.default.socket.on('from follower', function (payload) {
-	          console.log('message from follower');
-	          console.log(payload);
+	          if ("voting" in payload) {
+	            _TruthStore2.default.setGameProgress(1, payload.response);
+
+	            if (_TruthStore2.default.getQuestionResponse[0] !== false && _TruthStore2.default.getQuestionResponse[1] !== false) {
+	              _TruthStore2.default.finalizeResponses();
+	            }
+	          }
 	        });
 	      } else {
 	        _TruthStore2.default.socket.on('from leader', function (payload) {
-	          payload = payload.payload;
-	          console.log('message from leader');
 	          if ("question" in payload) {
-	            console.log(payload.question);
 	            _TruthStore2.default.setCurrentTruth(payload.question);
 	            _reactCookie2.default.save('Z2FtZS1xdWVzdGlvbg', btoa(payload.question).replace(/\=/g, ''));
 	          }
 	        });
 	      }
-	      // if(!(this.state.leader == me)){ // only the leader will request the questions
-	      //
-	      //   // TruthStore.getUnansweredTruths()
-	      // }
 	    }
 	  }, {
 	    key: 'incorrectURLQuery',
@@ -34549,6 +34606,10 @@
 
 	var _TruthStore2 = _interopRequireDefault(_TruthStore);
 
+	var _UserStore = __webpack_require__(226);
+
+	var _UserStore2 = _interopRequireDefault(_UserStore);
+
 	function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
 	function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -34563,15 +34624,52 @@
 	  function Question(props) {
 	    _classCallCheck(this, Question);
 
-	    return _possibleConstructorReturn(this, (Question.__proto__ || Object.getPrototypeOf(Question)).call(this, props));
+	    var _this = _possibleConstructorReturn(this, (Question.__proto__ || Object.getPrototypeOf(Question)).call(this, props));
+
+	    _this.handleVoting = _this.handleVoting.bind(_this);
+	    _this.state = {
+	      truth: false,
+	      drink: false
+	    };
+	    return _this;
 	  }
 
 	  _createClass(Question, [{
+	    key: 'handleVoting',
+	    value: function handleVoting(score, category) {
+	      if (!(this.state.drink || this.state.truth)) {
+	        _TruthStore2.default.submitQuestionResponse(_UserStore2.default.isLeader, score);
+
+	        if (/drink/.test(category)) {
+	          this.setState({
+	            drink: true
+	          });
+	        } else {
+	          this.setState({
+	            truth: true
+	          });
+	        }
+	      }
+	    }
+	  }, {
+	    key: 'componentDidMount',
+	    value: function componentDidMount() {
+	      var _this2 = this;
+
+	      _TruthStore2.default.socket.on('from leader', function (payload) {
+	        if ("reset" in payload) {
+	          _this2.setState({
+	            truth: false,
+	            drink: false
+	          });
+	        }
+	      });
+	    }
+	  }, {
 	    key: 'render',
 	    value: function render() {
-	      // console.log("______________RENDER")
-	      // console.log(TruthStore.getUnansweredTruths.peek());
-	      // console.log("______________RENDER\n\n\n")
+	      var _this3 = this;
+
 	      return _react2.default.createElement(
 	        'div',
 	        { className: 'question-wrapper' },
@@ -34589,12 +34687,20 @@
 	          { className: 'row vote' },
 	          _react2.default.createElement(
 	            'div',
-	            { className: 'drink' },
+	            {
+	              className: this.state.drink ? 'drink voted' : 'drink',
+	              onClick: function onClick() {
+	                _this3.handleVoting(0, "drink");
+	              } },
 	            _react2.default.createElement('div', { className: 'image' })
 	          ),
 	          _react2.default.createElement(
 	            'div',
-	            { className: 'truth' },
+	            {
+	              className: this.state.truth ? 'truth voted' : 'truth',
+	              onClick: function onClick() {
+	                _this3.handleVoting(1, "truth");
+	              } },
 	            _react2.default.createElement('div', { className: 'image' })
 	          )
 	        )

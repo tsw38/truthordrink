@@ -20,7 +20,7 @@ export default class ActiveUsers extends Component{
 
     UserStore.socket.on('from server', (message)=>{
       if('leader' in message){
-        console.log('leader is',message);
+        // console.log('leader is',message);
         const isLeader = (message.leader) ? 'bGVhZGVy' : 'Zm9sbG93ZXI';
         UserStore.setLeader(isLeader);
       }

@@ -44,27 +44,23 @@ export default class Game extends Component{
 
   componentDidMount(){
     if(UserStore.getLeader){ // only the leader will request the questions
-      // TruthStore.setUnansweredTruths([group.substring(0,36),group.substring(37,73)])
       TruthStore.socket.on('from follower',(payload)=>{
-        console.log('message from follower');
-        console.log(payload);
+        if("voting" in payload){
+          TruthStore.setGameProgress(1,payload.response);
+
+          if(TruthStore.getQuestionResponse[0] !== false && TruthStore.getQuestionResponse[1] !== false){
+            TruthStore.finalizeResponses();
+          }
+        }
       });
     } else {
       TruthStore.socket.on('from leader',(payload)=>{
-        payload = payload.payload;
-        console.log('message from leader');
         if("question" in payload){
-          console.log(payload.question);
           TruthStore.setCurrentTruth(payload.question);
           cookie.save('Z2FtZS1xdWVzdGlvbg', btoa(payload.question).replace(/\=/g,''));
         }
       });
     }
-    // if(!(this.state.leader == me)){ // only the leader will request the questions
-    //
-    //   // TruthStore.getUnansweredTruths()
-    // }
-
   }
 
   incorrectURLQuery(cb){
