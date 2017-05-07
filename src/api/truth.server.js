@@ -55,7 +55,7 @@ app.use('/game/:hash', express.static(__dirname + './../public'));
 app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
 
 
-console.log("---------REGISTERING GAME ROUTES--------");
+// console.log("---------REGISTERING GAME ROUTES--------");
 gameRoutes(app,mysql,path);
 
 io.on('connect', handleSockets); //all of the handshakes
@@ -71,9 +71,9 @@ function updateActiveUsers(user){
       private: user.private
     }
   }
-  console.log("\n\n\n\n--------------ACTIVE USERS--------------");
-  console.log(activeUsers);
-  console.log("--------------ACTIVE USERS--------------\n\n\n\n");
+  // console.log("\n\n\n\n--------------ACTIVE USERS--------------");
+  // console.log(activeUsers);
+  // console.log("--------------ACTIVE USERS--------------\n\n\n\n");
 }
 
 let privateRooms = {}
@@ -83,9 +83,9 @@ function handlePrivateRooms(roomName,usersArr){
   } else {
     privateRooms[roomName] = usersArr;
   }
-  console.log("\n\n\n\n-------------- PRIVATE ROOMS --------------");
-  console.log(privateRooms);
-  console.log("-------------- PRIVATE ROOMS --------------\n\n\n\n");
+  // console.log("\n\n\n\n-------------- PRIVATE ROOMS --------------");
+  // console.log(privateRooms);
+  // console.log("-------------- PRIVATE ROOMS --------------\n\n\n\n");
 }
 
 
@@ -140,16 +140,16 @@ function handleSockets(socket){
       } else {
         io.sockets.in(roomsArr[0]).emit('from server',{'message':"There are already two people in that room"});
       }
-      console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n\n\n");
+      // console.log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>\n\n\n\n");
     }
   });
 
 
   socket.on('gameroom-initialize', (game)=>{
-    console.log(" socket is joining room ");
+    // console.log(" socket is joining room ");
     socket.join(game.room);
-    console.log(game.room);
-    console.log(" socket is joining room ");
+    // console.log(game.room);
+    // console.log(" socket is joining room ");
 
   });
   socket.on('gameroom', (payload)=>{
@@ -161,7 +161,7 @@ function handleSockets(socket){
   });
 
   socket.on('disconnect', () =>{
-    console.log("\n\n\n\n-------------- CLEAN ACTIVE USER POOL --------------");
+    // console.log("\n\n\n\n-------------- CLEAN ACTIVE USER POOL --------------");
     // console.log(socket.UUID);
     // console.log(socket.NAME);
     // console.log(socket.PRIVATE);
@@ -170,18 +170,7 @@ function handleSockets(socket){
       UUID: socket.UUID
     });
     socket.broadcast.emit('user left',socket.UUID);
-
   })
-
-  // socket.on('private group initialize', (group)=>{
-  //   // io.sockets.emit('user left',group);
-  //
-  //   updateActiveUsers({username:'',UUID:group.p1.uuid});
-  //   updateActiveUsers({username:'',UUID:group.p2.uuid});
-  // });
-
-
-
 }
 
 server.listen(process.env.APP_PORT, '0.0.0.0', () => { //broadcast to network

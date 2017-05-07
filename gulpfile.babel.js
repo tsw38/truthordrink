@@ -31,9 +31,9 @@ gulp.task('sass-prod', shell.task(['compass compile ./src -e production']));
 gulp.task('prod-clean', shell.task([
     `echo '~~~~~~~~  UPDATING THE BUILD FOLDER  ~~~~~~~~'`,
     `rm -rf build/*`,
-    `cp -a ./public/ ./build/`,
-    `rm build/css/main.css.map build/js/bundle.js public/js/bundle.min.js -f`,
-    `sed -i '' -e 's/bundle/bundle.min/g' ./build/`
+    `cp -a ./public/* ./build/`,
+    `rm build/css/main.css.map build/js/bundle.js public/js/bundle.min.js`,
+    `sed -i '' -e 's/bundle/bundle.min/g' ./build/index.html`
   ])
 );
 
